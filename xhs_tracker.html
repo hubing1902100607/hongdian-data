@@ -1013,9 +1013,9 @@
       </div>
 
       <div class="preview-title">CSV 格式要求（列名顺序不限，需包含以下字段）</div>
-      <div class="csv-format-box">日期,商品链接,销量,24小时加购,价格,店铺粉丝
-2025-03-10,https://xhslink.com/m/xxx,18500,1200,18.90,104
-2025-03-10,https://xhslink.com/m/yyy,95000,800,6.90,712</div>
+      <div class="csv-format-box">日期,商品链接,销量,24小时加购,24小时购买人数,价格,店铺粉丝
+2025-03-10,https://xhslink.com/m/xxx,18500,1200,100,18.90,104
+2025-03-10,https://xhslink.com/m/yyy,95000,800,500,6.90,712</div>
 
       <div class="upload-zone" id="upload-zone">
         <input type="file" accept=".csv,.xlsx,.xls" id="csv-file-input" onchange="handleFileSelect(this)">
@@ -1894,8 +1894,8 @@ function normalizeDate(raw) {
 
 function parsePrice(raw) {
   if (!raw) return null;
-  // Strip ¥ and any full-width ¥ (￥) and spaces
-  const cleaned = String(raw).replace(/[¥￥\s]/g,'');
+  // Strip both half-width ¥, full-width ￥, spaces, commas
+  const cleaned = String(raw).replace(/[¥￥\uff65\s,]/g,'');
   const val = parseFloat(cleaned);
   return isNaN(val) ? null : val;
 }
@@ -1903,8 +1903,8 @@ function parsePrice(raw) {
 function parseFans(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
-  // Handles: 1.9w / 1.9万 / 19000 / 未找到
-  if (s === '未找到' || s === '-' || s === '') return null;
+  if (s === '未找到' || s === '-' || s === '' || s === '0') return null;
+  // Handles: 1.9w / 1.9W / 1.9万 / 19000
   const wMatch = s.match(/^([\d.]+)[wW万]/);
   if (wMatch) return Math.round(parseFloat(wMatch[1]) * 10000);
   const val = parseFloat(s);
@@ -1912,6 +1912,15 @@ function parseFans(raw) {
 }
 
 function parseCSV(text) {
+  try {
+    _parseCSVInner(text);
+  } catch(err) {
+    alert('解析出错：' + err.message + '\n\n请截图发给客服');
+    console.error(err);
+  }
+}
+
+function _parseCSVInner(text) {
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
   if (lines.length < 2) { alert('文件内容为空或格式不对'); return; }
 
