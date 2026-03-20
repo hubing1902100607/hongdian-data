@@ -869,7 +869,7 @@
   </div>
   <div class="header-right">
     <span id="import-btn-wrap" style="display:none;">
-      <button class="import-btn" onclick="openImportModal()">📥 导入销量数据</button>
+      <button class="import-btn" onclick="openImportModal()">📥 导入数据</button>
     </span>
     <div class="month-badge">2025 / 03</div>
     <div id="trial-badge" style="display:none;padding:6px 12px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--gold);"></div>
@@ -1177,8 +1177,8 @@ function tryLogin() {
   const val = document.getElementById('login-input').value.trim();
   if (!val) return;
 
-  // Silent admin check
-  if (val === ADMIN_PASSWORD) {
+  // Silent admin check (case-insensitive)
+  if (val.toUpperCase() === ADMIN_PASSWORD.toUpperCase()) {
     saveSession('admin', null, null);
     enterApp('admin');
     return;
@@ -1223,7 +1223,7 @@ function enterApp(role) {
   currentRole = role;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
-  document.getElementById('import-btn-wrap').style.display = 'none';
+  document.getElementById('import-btn-wrap').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('trial-badge').style.display = 'none';
 
   // Show expiry badge for regular users
