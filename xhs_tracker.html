@@ -515,6 +515,20 @@
     vertical-align: middle;
   }
 
+  .fav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    transition: transform 0.15s;
+    line-height: 1;
+    color: var(--text3);
+  }
+  .fav-btn:hover { transform: scale(1.2); }
+  .fav-btn.active { color: var(--gold); }
+
   /* Pagination */
   .pagination {
     display: flex;
@@ -918,6 +932,7 @@
       <input type="text" placeholder="搜索商品名称或店铺…" id="search-input" oninput="filterAndRender()">
     </div>
     <div class="filter-group" id="cat-filters"></div>
+    <button id="fav-filter-btn" class="filter-btn" onclick="toggleFavFilter()" style="white-space:nowrap;">☆ 我的收藏</button>
     <select class="sort-select" id="sort-select" onchange="filterAndRender()">
       <option value="sales">按销量排序</option>
       <option value="addCart">按加购量排序</option>
@@ -927,9 +942,9 @@
     </select>
     <div class="results-count" id="results-count"></div>
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
+    <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
       📊 导出 Excel
     </button>
-    <button class="filter-btn" onclick="exportToExcel()" style="background:var(--teal-dim);border-color:rgba(0,201,167,0.3);color:var(--teal);white-space:nowrap;">📥 导出 Excel</button>
   </div>
 
   <!-- Table -->
@@ -938,6 +953,7 @@
       <table>
         <thead>
           <tr>
+            <th style="width:36px">☆</th>
             <th style="width:50px">排名</th>
             <th>类目</th>
             <th>商品信息</th>
@@ -1067,11 +1083,11 @@ function copyProductCode() {
 
 // ── 激活码验证 ────────────────────────────────────────────
 // 激活码格式（由生成器产生）：
-//   BASE64( fp(8) + plan(1) + expiry(8) + hmac(8) ) → 去掉填充 → 大写
+//   FP-PLAN-YYYYMMDD-HMAC
+//   例：1D80D2ED-M-20260419-4D302397
 //
-// plan: M=月度 Q=季度 Y=年度 A=管理员
-// expiry: YYYYMMDD
-// hmac: djb2(fp+plan+expiry+secret) 前8位hex
+// plan: M=月度 Q=季度 Y=年度
+// HMAC: djb2(fp + plan + expiry + secret) 前8位大写hex
 
 function djb2(str) {
   let h = 5381;
@@ -1083,33 +1099,28 @@ function djb2(str) {
 }
 
 function verifyActivationCode(rawCode) {
-  // Strip dashes/spaces, uppercase
-  const code = rawCode.replace(/[-\s]/g, '').toUpperCase();
+  const code = rawCode.replace(/\s/g, '').toUpperCase();
 
   // Admin bypass
-  if (code === ADMIN_PASSWORD.toUpperCase() || rawCode === ADMIN_PASSWORD) {
+  if (rawCode === ADMIN_PASSWORD) {
     return { valid: true, role: 'admin', expiry: null };
   }
 
-  // Decode: try base64 → raw string
-  let decoded;
-  try {
-    decoded = atob(code.replace(/_/g, '/').replace(/-/g, '+'));
-  } catch {
+  // Format: FP-PLAN-YYYYMMDD-HMAC
+  const parts = code.split('-');
+  if (parts.length !== 4) {
     return { valid: false, error: '激活码格式错误，请检查后重试' };
   }
 
-  if (decoded.length < 25) {
+  const [fp, plan, expiryCompact, hmac] = parts;
+
+  if (fp.length !== 8 || !['M','Q','Y'].includes(plan) ||
+      expiryCompact.length !== 8 || hmac.length !== 8) {
     return { valid: false, error: '激活码格式错误，请检查后重试' };
   }
-
-  const fp      = decoded.slice(0, 8);   // 设备指纹
-  const plan    = decoded.slice(8, 9);   // 套餐
-  const expiry  = decoded.slice(9, 17);  // YYYYMMDD
-  const hmac    = decoded.slice(17, 25); // 校验码
 
   // Verify HMAC
-  const expected = djb2(fp + plan + expiry + HMAC_SECRET);
+  const expected = djb2(fp + plan + expiryCompact + HMAC_SECRET);
   if (hmac !== expected) {
     return { valid: false, error: '激活码无效，请联系客服' };
   }
@@ -1119,8 +1130,8 @@ function verifyActivationCode(rawCode) {
     return { valid: false, error: '此激活码已绑定其他设备，无法在本设备使用' };
   }
 
-  // Check expiry
-  const expiryDate = expiry.slice(0,4) + '-' + expiry.slice(4,6) + '-' + expiry.slice(6,8);
+  // Parse expiry YYYYMMDD → YYYY-MM-DD
+  const expiryDate = expiryCompact.slice(0,4) + '-' + expiryCompact.slice(4,6) + '-' + expiryCompact.slice(6,8);
   if (new Date(expiryDate) < new Date(new Date().toDateString())) {
     return { valid: false, error: `订阅已于 ${expiryDate} 到期，请联系客服续费` };
   }
@@ -1191,14 +1202,31 @@ function enterApp(role) {
   currentRole = role;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
-  document.getElementById('import-btn-wrap').style.display = role === 'admin' ? '' : 'none';
+  // Import button always hidden from UI — admin triggers via shortcut key
+  document.getElementById('import-btn-wrap').style.display = 'none';
   const trialBadge = document.getElementById('trial-badge');
   if (trialBadge) trialBadge.style.display = 'none';
   renderKPIs();
   renderCharts();
   renderCatFilters();
   renderTable();
+  updateFavBtn();
 }
+
+// ── Secret admin shortcut: press 'I' key 5 times quickly to open import ──
+let _iCount = 0, _iTimer = null;
+document.addEventListener('keydown', e => {
+  if (currentRole !== 'admin') return;
+  if (e.key === 'i' || e.key === 'I') {
+    _iCount++;
+    clearTimeout(_iTimer);
+    _iTimer = setTimeout(() => { _iCount = 0; }, 1500);
+    if (_iCount >= 5) {
+      _iCount = 0;
+      openImportModal();
+    }
+  }
+});
 
 function handleLogout() {
   clearSession();
@@ -1422,6 +1450,7 @@ function getFiltered() {
   let data = [...RAW_DATA];
   if (currentCat !== 'all') data = data.filter(d => d.category === currentCat);
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
+  if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   const sort = document.getElementById('sort-select').value;
   if (sort === 'sales') data.sort((a,b) => b.sales - a.sales);
   else if (sort === 'addCart') data.sort((a,b) => b.addCart - a.addCart);
@@ -1469,8 +1498,10 @@ function renderTable() {
       : isHidden
       ? '<span class="hot-tag" style="background:rgba(191,90,242,0.13);border-color:rgba(191,90,242,0.3);color:#bf5af2">🌱 隐藏潜力</span>'
       : '';
+    const fav = isFav(item.id);
     return `
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
+        <td><button class="fav-btn ${fav ? 'active' : ''}" onclick="toggleFav(${item.id}, event)" title="${fav ? '取消收藏' : '加入收藏'}">${fav ? '★' : '☆'}</button></td>
         <td><div class="rank-badge ${rankClass}">${rank}</div></td>
         <td><span class="category-tag ${catClass}">${item.category.replace('类','')}</span></td>
         <td>
@@ -1919,7 +1950,53 @@ function confirmImport() {
   setTimeout(() => closeImportModalBtn(), 2200);
 }
 
-// ── Export Excel ─────────────────────────────────────────
+// ── Favourites ────────────────────────────────────────────
+const FAV_KEY = 'hd_favourites';
+let showFavOnly = false;
+
+function loadFavs() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; }
+}
+function saveFavs(arr) {
+  localStorage.setItem(FAV_KEY, JSON.stringify(arr));
+}
+function isFav(id) { return loadFavs().includes(id); }
+
+function toggleFav(id, e) {
+  e.stopPropagation();
+  const favs = loadFavs();
+  const idx  = favs.indexOf(id);
+  if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+  saveFavs(favs);
+  renderTable();
+  updateFavBtn();
+}
+
+function toggleFavFilter() {
+  showFavOnly = !showFavOnly;
+  currentPage = 1;
+  updateFavBtn();
+  renderTable();
+}
+
+function updateFavBtn() {
+  const btn  = document.getElementById('fav-filter-btn');
+  const count = loadFavs().length;
+  if (showFavOnly) {
+    btn.classList.add('active');
+    btn.style.background = 'var(--gold-dim)';
+    btn.style.borderColor = 'rgba(255,214,10,0.35)';
+    btn.style.color = 'var(--gold)';
+    btn.textContent = `★ 我的收藏 (${count})`;
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.textContent = count > 0 ? `☆ 我的收藏 (${count})` : '☆ 我的收藏';
+  }
+}
+// ── End Favourites ────────────────────────────────────────
 function exportExcel() {
   const filtered = getFiltered();
   const maxSales = Math.max(...RAW_DATA.map(d => d.sales));
