@@ -394,15 +394,70 @@ footer a { color: var(--text3); text-decoration: none; }
 <div class="hero">
   <div class="hero-tag">🔥 小红书爆款选品情报</div>
   <h1>每月精选爆款数据<br>让你的带货<span>少走弯路</span></h1>
-  <p class="hero-sub">专为小红书达人打造的选品数据工具，实时追踪低粉爆品、销量趋势、加购信号，帮你提前锁定下一个爆款。</p>
+  <p class="hero-sub">专为电商卖家开发的选品数据工具，帮你提前发现爆款信号，少踩坑、多出单。</p>
 </div>
 
 <div class="plans-wrap">
 
-  <div class="plans-grid">
+  <!-- 价值说明区 -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">💥</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">识别低粉高销爆款</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">帮你找到粉丝少但销量高的黑马商品，跟播风险低、复购稳。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(255,45,85,.12);color:#ff6b85;">低粉爆品标签</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">📈</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">销量趋势一目了然</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">每个商品都有周维度趋势图，哪个品在爆发、哪个在退热，一眼看出。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(0,201,167,.12);color:#00c9a7;">趋势图表</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">🛒</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">加购信号比销量更早</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">24小时加购数据是销量的先行指标，加购高但还没爆的，就是你的机会。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(255,214,10,.11);color:#ffd60a;">潜力预警</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">🌱</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">发现隐藏潜力品</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">低粉丝、低加购、但24小时购买人数高——用户看到就下单的冲动消费型爆款。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(191,90,242,.12);color:#bf5af2;">隐藏潜力</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">🔍</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">多维筛选快速选品</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">按类目、销量、加购、价格自由筛选，收藏感兴趣的商品随时回看。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(90,200,250,.12);color:#5ac8fa;">智能筛选</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
+      <div style="font-size:22px;margin-bottom:10px;">📊</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">一键导出数据表格</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">全部数据支持导出为 Excel，方便整理或与团队共享选品方案。</div>
+      <span style="display:inline-block;margin-top:10px;padding:3px 8px;border-radius:4px;font-size:11px;background:rgba(52,199,89,.12);color:#34c759;">导出 Excel</span>
+    </div>
+  </div>
 
-    <!-- 月度 -->
-    <div class="plan">
+  <!-- 底部信息条 -->
+  <div style="display:flex;align-items:center;gap:24px;padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:40px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);">
+      <span style="width:6px;height:6px;border-radius:50%;background:#ff2d55;display:inline-block;"></span>
+      覆盖食品·日化·百货·宠物·虚拟·服装等诸多热门类目
+    </div>
+    <div style="width:1px;height:16px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);">
+      <span style="width:6px;height:6px;border-radius:50%;background:#00c9a7;display:inline-block;"></span>
+      数据持续更新
+    </div>
+    <div style="width:1px;height:16px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);">
+      <span style="width:6px;height:6px;border-radius:50%;background:#ffd60a;display:inline-block;"></span>
+      激活码绑定设备，数据安全独享
+    </div>
+  </div>
+
+    <div class="plans-grid">
       <div class="plan-header">
         <div class="plan-name">月度版</div>
         <div class="plan-price"><sup>¥</sup>59.9</div>
