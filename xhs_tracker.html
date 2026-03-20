@@ -794,29 +794,47 @@
 
 <!-- Login Screen -->
 <div id="login-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9000; align-items:center; justify-content:center; flex-direction:column;">
-  <div style="text-align:center; margin-bottom:36px;">
+  <div style="text-align:center; margin-bottom:28px;">
     <div style="width:56px;height:56px;background:var(--red);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 32px rgba(255,45,85,0.45);">🌸</div>
     <div style="font-size:22px;font-weight:500;letter-spacing:0.02em;">红点数据</div>
     <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:0.1em;margin-top:4px;">RED DOT DATA · XHS MONITOR</div>
   </div>
-  <div style="width:100%;max-width:360px;padding:0 24px;">
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;text-align:center;">输入兑换码以访问数据</div>
-      <input id="login-input" type="text" placeholder="请输入兑换码"
-        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:10px;box-sizing:border-box;letter-spacing:0.06em;"
+  <div style="width:100%;max-width:380px;padding:0 24px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 24px;">
+
+      <!-- 产品信息码展示 -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">你的产品信息码</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="product-code-display" style="font-size:20px;font-weight:500;font-family:var(--mono);letter-spacing:.12em;color:var(--text);flex:1;">--------</div>
+          <button onclick="copyProductCode()" id="copy-btn"
+            style="padding:6px 12px;background:var(--bg);border:1px solid var(--border-b);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap;transition:all .15s;">
+            复制
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">
+          购买时请将此码发送给客服，激活码将与此码绑定
+        </div>
+      </div>
+
+      <!-- 激活码输入 -->
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">输入激活码</div>
+      <input id="login-input" type="text" placeholder="请输入激活码"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:10px;box-sizing:border-box;letter-spacing:.08em;text-transform:uppercase;"
         onkeydown="if(event.key==='Enter')tryLogin()"
-        oninput="hideLoginError('login-error')">
+        oninput="this.value=this.value.toUpperCase();hideLoginError('login-error')">
       <div id="login-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;padding:8px 10px;background:var(--red-dim);border-radius:6px;"></div>
       <button onclick="tryLogin()"
         style="width:100%;padding:12px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;">
-        进入
+        激活
       </button>
-      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.7;">
-        兑换码到期后自动失效<br>购买/续费请关注公众号：北苑笔谈
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.8;">
+        激活码与设备绑定，一经激活无法更换设备<br>
+        购买/续费请关注公众号：<b style="color:var(--text2)">北苑笔谈</b>
       </div>
     </div>
     <a href="membership.html" target="_blank"
-      style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-family:var(--font);text-decoration:none;transition:all .15s;"
+      style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-family:var(--font);text-decoration:none;transition:all .15s;"
       onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='var(--text)'"
       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
       查看会员权益 &amp; 价格 →
@@ -994,38 +1012,13 @@
 //  AUTH CONFIG — 只需修改这里
 // ══════════════════════════════════════════════════════════
 const ADMIN_PASSWORD = 'beiyuanbitan1902100607';
-
-const REDEEM_CODES = {
-  // 格式：'兑换码': { expiry, issuedAt, label, trial }
-  //
-  // expiry    → 订阅到期日 'YYYY-MM-DD'
-  // issuedAt  → 发码时间 'YYYY-MM-DDTHH:mm'（精确到分钟）
-  //             填写后，用户必须在24小时内首次激活，否则自动失效
-  //             不填则不限制激活时间
-  // label     → 备注，方便你自己识别用户
-  // trial     → true = 3天试用码（按需发放）
-  //
-  // 价格体系：月度 ¥59.9（30天）/ 季度 ¥135（90天）/ 年度 ¥365（365天）
-  //
-  // 示例（给用户发码后立即填 issuedAt）：
-  // 'RD-0001': { expiry: '2025-06-30', issuedAt: '2025-03-19T14:30', label: '张三 · 季度' },
-
-  // ── 付费码 ──
-  'RD-2025-A1B2': { expiry: '2025-06-30', issuedAt: '2025-03-19T00:00', label: '用户A · 季度' },
-  'RD-2025-C3D4': { expiry: '2025-04-30', issuedAt: '2025-03-19T00:00', label: '用户B · 月度' },
-  'RD-2025-E5F6': { expiry: '2025-12-31', issuedAt: '2025-03-19T00:00', label: '用户C · 年度' },
-  'RD-TEST-0000': { expiry: '2099-12-31', label: '测试永久码（无激活期限制）' },
-};
+const HMAC_SECRET    = 'hd_bynb_2025_secret_key'; // 与生成器保持一致，勿泄露
 // ══════════════════════════════════════════════════════════
 
-// Auth state
-const SESSION_KEY  = 'hd_session';
-const ACTIVATE_KEY = 'hd_activations'; // stores { code: { fingerprint, activatedAt } }
-let currentRole = null;
+const SESSION_KEY = 'hd_session';
+let currentRole   = null;
 
-// ── Device fingerprint ────────────────────────────────────
-// Combines stable browser properties into a short hash.
-// Not 100% tamper-proof but catches most casual sharing.
+// ── 产品信息码（设备指纹） ────────────────────────────────
 function getFingerprint() {
   const raw = [
     navigator.userAgent,
@@ -1036,21 +1029,103 @@ function getFingerprint() {
     navigator.hardwareConcurrency || '',
     navigator.platform || '',
   ].join('|');
-  // Simple djb2 hash → hex string
   let h = 5381;
   for (let i = 0; i < raw.length; i++) {
     h = ((h << 5) + h) ^ raw.charCodeAt(i);
     h = h >>> 0;
   }
-  return h.toString(16).padStart(8, '0');
+  return h.toString(16).toUpperCase().padStart(8, '0');
 }
 
-// ── Activation store (localStorage) ──────────────────────
-function loadActivations() {
-  try { return JSON.parse(localStorage.getItem(ACTIVATE_KEY)) || {}; } catch { return {}; }
+// 格式化为 XXXX-XXXX
+function formatProductCode(fp) {
+  return fp.slice(0,4) + '-' + fp.slice(4,8);
 }
-function saveActivations(obj) {
-  localStorage.setItem(ACTIVATE_KEY, JSON.stringify(obj));
+
+const DEVICE_FP = getFingerprint();
+
+// 页面加载时显示产品码
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('product-code-display');
+  if (el) el.textContent = formatProductCode(DEVICE_FP);
+});
+
+function copyProductCode() {
+  const code = formatProductCode(DEVICE_FP);
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '已复制 ✓';
+    btn.style.color = 'var(--teal)';
+    btn.style.borderColor = 'rgba(0,201,167,0.4)';
+    setTimeout(() => {
+      btn.textContent = '复制';
+      btn.style.color = 'var(--text2)';
+      btn.style.borderColor = 'var(--border-b)';
+    }, 2000);
+  });
+}
+
+// ── 激活码验证 ────────────────────────────────────────────
+// 激活码格式（由生成器产生）：
+//   BASE64( fp(8) + plan(1) + expiry(8) + hmac(8) ) → 去掉填充 → 大写
+//
+// plan: M=月度 Q=季度 Y=年度 A=管理员
+// expiry: YYYYMMDD
+// hmac: djb2(fp+plan+expiry+secret) 前8位hex
+
+function djb2(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h.toString(16).toUpperCase().padStart(8, '0');
+}
+
+function verifyActivationCode(rawCode) {
+  // Strip dashes/spaces, uppercase
+  const code = rawCode.replace(/[-\s]/g, '').toUpperCase();
+
+  // Admin bypass
+  if (code === ADMIN_PASSWORD.toUpperCase() || rawCode === ADMIN_PASSWORD) {
+    return { valid: true, role: 'admin', expiry: null };
+  }
+
+  // Decode: try base64 → raw string
+  let decoded;
+  try {
+    decoded = atob(code.replace(/_/g, '/').replace(/-/g, '+'));
+  } catch {
+    return { valid: false, error: '激活码格式错误，请检查后重试' };
+  }
+
+  if (decoded.length < 25) {
+    return { valid: false, error: '激活码格式错误，请检查后重试' };
+  }
+
+  const fp      = decoded.slice(0, 8);   // 设备指纹
+  const plan    = decoded.slice(8, 9);   // 套餐
+  const expiry  = decoded.slice(9, 17);  // YYYYMMDD
+  const hmac    = decoded.slice(17, 25); // 校验码
+
+  // Verify HMAC
+  const expected = djb2(fp + plan + expiry + HMAC_SECRET);
+  if (hmac !== expected) {
+    return { valid: false, error: '激活码无效，请联系客服' };
+  }
+
+  // Verify device fingerprint
+  if (fp !== DEVICE_FP) {
+    return { valid: false, error: '此激活码已绑定其他设备，无法在本设备使用' };
+  }
+
+  // Check expiry
+  const expiryDate = expiry.slice(0,4) + '-' + expiry.slice(4,6) + '-' + expiry.slice(6,8);
+  if (new Date(expiryDate) < new Date(new Date().toDateString())) {
+    return { valid: false, error: `订阅已于 ${expiryDate} 到期，请联系客服续费` };
+  }
+
+  return { valid: true, role: 'user', plan, expiry: expiryDate };
 }
 
 // ── Login helpers ─────────────────────────────────────────
@@ -1063,83 +1138,33 @@ function showLoginError(id, msg) {
   if (!el) return;
   el.textContent = msg;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
+  setTimeout(() => { el.style.display = 'none'; }, 4500);
 }
 
-// ── Main login entry ──────────────────────────────────────
 function tryLogin() {
   const val = document.getElementById('login-input').value.trim();
   if (!val) return;
 
-  // Admin — bypass all restrictions
+  // Silent admin check
   if (val === ADMIN_PASSWORD) {
     saveSession('admin', null, null);
     enterApp('admin');
     return;
   }
 
-  const code  = val.toUpperCase();
-  const entry = REDEEM_CODES[code];
-  if (!entry) {
-    showLoginError('login-error', '兑换码无效，请检查后重试');
+  const result = verifyActivationCode(val);
+  if (!result.valid) {
+    showLoginError('login-error', result.error);
     return;
   }
 
-  // Check paid-code expiry date
-  if (!entry.trial) {
-    if (new Date(entry.expiry) < new Date(new Date().toDateString())) {
-      showLoginError('login-error', `此兑换码已于 ${entry.expiry} 到期，请联系客服续期`);
-      return;
-    }
-  }
-
-  const fp          = getFingerprint();
-  const activations = loadActivations();
-  const record      = activations[code];
-  const now         = Date.now();
-
-  if (!record) {
-    // ── First activation: check 24h window ───────────────
-    if (entry.issuedAt) {
-      const issuedMs = new Date(entry.issuedAt).getTime();
-      if (now > issuedMs + 24 * 3600 * 1000) {
-        showLoginError('login-error', '此兑换码已超过24小时未激活，已自动失效，请联系客服重新获取');
-        return;
-      }
-    }
-    // Determine expiry
-    let expiryStr;
-    if (entry.trial) {
-      const d = new Date();
-      d.setDate(d.getDate() + 3);
-      expiryStr = d.toISOString().slice(0, 10);
-    } else {
-      expiryStr = entry.expiry;
-    }
-    // Record activation with fingerprint + timestamp
-    activations[code] = { fingerprint: fp, activatedAt: now, expiry: expiryStr };
-    saveActivations(activations);
-    saveSession('user', code, expiryStr);
+  if (result.role === 'admin') {
+    saveSession('admin', null, null);
+    enterApp('admin');
+  } else {
+    saveSession('user', val.toUpperCase(), result.expiry);
     enterApp('user');
-    return;
   }
-
-  // ── Code already activated ────────────────────────────
-  // Check: was it activated on THIS device?
-  if (record.fingerprint !== fp) {
-    showLoginError('login-error', '此兑换码已在其他设备激活，不支持更换设备使用');
-    return;
-  }
-
-  // Check: subscription still valid?
-  if (new Date(record.expiry) < new Date(new Date().toDateString())) {
-    showLoginError('login-error', `订阅已于 ${record.expiry} 到期，请联系客服续费`);
-    return;
-  }
-
-  // Same device, still valid — let them in
-  saveSession('user', code, record.expiry);
-  enterApp('user');
 }
 
 // ── Session helpers ───────────────────────────────────────
@@ -1147,7 +1172,7 @@ function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
 }
 function saveSession(role, code, expiry) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ role, code, expiry, ts: Date.now() }));
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ role, code, expiry, fp: DEVICE_FP, ts: Date.now() }));
 }
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
@@ -1156,12 +1181,8 @@ function isSessionValid(session) {
   if (!session) return false;
   if (session.role === 'admin') return true;
   if (!session.expiry) return false;
-  // Also verify device fingerprint still matches activation record
-  if (session.code) {
-    const activations = loadActivations();
-    const record = activations[session.code];
-    if (record && record.fingerprint !== getFingerprint()) return false;
-  }
+  // Device fingerprint must still match
+  if (session.fp && session.fp !== DEVICE_FP) return false;
   return new Date(session.expiry) >= new Date(new Date().toDateString());
 }
 
@@ -1171,24 +1192,8 @@ function enterApp(role) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
   document.getElementById('import-btn-wrap').style.display = role === 'admin' ? '' : 'none';
-
-  // Show trial badge if applicable
-  const session = loadSession();
   const trialBadge = document.getElementById('trial-badge');
-  if (trialBadge && session && session.role === 'user' && session.expiry) {
-    const today = new Date(new Date().toDateString());
-    const expiry = new Date(session.expiry);
-    const diffDays = Math.round((expiry - today) / 86400000);
-    // Check if this is a trial code
-    const isTrial = session.code && REDEEM_CODES[session.code] && REDEEM_CODES[session.code].trial;
-    if (isTrial) {
-      trialBadge.textContent = `🕐 试用期还剩 ${diffDays} 天`;
-      trialBadge.style.display = '';
-    } else {
-      trialBadge.style.display = 'none';
-    }
-  }
-
+  if (trialBadge) trialBadge.style.display = 'none';
   renderKPIs();
   renderCharts();
   renderCatFilters();
@@ -1205,6 +1210,10 @@ function handleLogout() {
 
 // ── Boot ──────────────────────────────────────────────────
 (function boot() {
+  // Show product code immediately
+  const el = document.getElementById('product-code-display');
+  if (el) el.textContent = formatProductCode(DEVICE_FP);
+
   const session = loadSession();
   if (isSessionValid(session)) {
     enterApp(session.role);
