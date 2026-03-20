@@ -1285,10 +1285,33 @@ function handleLogout() {
 }
 
 // ── Boot ──────────────────────────────────────────────────
+const DATA_KEY = 'hd_raw_data';
+
+function loadPersistedData() {
+  try {
+    const saved = localStorage.getItem(DATA_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed) || !parsed.length) return;
+    parsed.forEach(s => {
+      const item = RAW_DATA.find(d => d.id === s.id);
+      if (item) Object.assign(item, s);
+    });
+  } catch(e) { console.error('load persist fail', e); }
+}
+
+function persistData() {
+  try { localStorage.setItem(DATA_KEY, JSON.stringify(RAW_DATA)); }
+  catch(e) { console.error('persist fail', e); }
+}
+
 (function boot() {
   // Show product code immediately
   const el = document.getElementById('product-code-display');
   if (el) el.textContent = formatProductCode(DEVICE_FP);
+
+  // Load any previously imported data from localStorage
+  loadPersistedData();
 
   const session = loadSession();
   if (isSessionValid(session)) {
@@ -2042,6 +2065,9 @@ function confirmImport() {
 
     updatedCount++;
   });
+
+  // Persist updated data to localStorage so it survives page refresh
+  persistData();
 
   // Re-render everything
   renderKPIs();
