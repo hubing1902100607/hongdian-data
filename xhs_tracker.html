@@ -132,7 +132,7 @@
   /* KPI row */
   .kpi-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 32px;
   }
@@ -873,6 +873,8 @@
     </span>
     <div class="month-badge">2025 / 03</div>
     <div id="trial-badge" style="display:none;padding:6px 12px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--gold);"></div>
+    <div id="expiry-badge" style="display:none;padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
+    <div id="expiry-badge" style="display:none;padding:6px 12px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
     <a href="membership.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
@@ -886,7 +888,7 @@
     <div class="kpi-card">
       <div class="kpi-label">收录爆款数</div>
       <div class="kpi-value" id="kpi-total">—</div>
-      <div class="kpi-desc">本月已追踪商品</div>
+      <div class="kpi-desc">累计已追踪商品数</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">💥 低粉爆品</div>
@@ -894,9 +896,14 @@
       <div class="kpi-desc">粉丝 &lt;500 · 加购 &gt;500</div>
     </div>
     <div class="kpi-card">
+      <div class="kpi-label">👑 高粉爆品</div>
+      <div class="kpi-value" id="kpi-high-fans">—</div>
+      <div class="kpi-desc">粉丝 &gt;5000 · 加购 &gt;500</div>
+    </div>
+    <div class="kpi-card">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 加购 &lt;100 · 日销 &gt;100</div>
+      <div class="kpi-desc">粉丝 &lt;500 · 加购 &lt;100 · 24h购买 &gt;100</div>
     </div>
   </div>
 
@@ -936,6 +943,7 @@
     <select class="sort-select" id="sort-select" onchange="filterAndRender()">
       <option value="sales">按销量排序</option>
       <option value="addCart">按加购量排序</option>
+      <option value="buy24h">按24h购买排序</option>
       <option value="price">按价格排序</option>
       <option value="revenue">按预估GMV排序</option>
       <option value="fans">按粉丝数排序</option>
@@ -959,6 +967,7 @@
             <th>商品信息</th>
             <th onclick="setSortAndFilter('sales')" id="th-sales">商品销量 ↕</th>
             <th onclick="setSortAndFilter('addCart')" id="th-addCart">24h加购 ↕</th>
+            <th onclick="setSortAndFilter('buy24h')" id="th-buy24h">24h购买 ↕</th>
             <th onclick="setSortAndFilter('price')" id="th-price">价格 ↕</th>
             <th onclick="setSortAndFilter('fans')" id="th-fans">店铺粉丝 ↕</th>
             <th onclick="setSortAndFilter('revenue')" id="th-revenue">预估GMV ↕</th>
@@ -1202,10 +1211,37 @@ function enterApp(role) {
   currentRole = role;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
-  // Import button always hidden from UI — admin triggers via shortcut key
   document.getElementById('import-btn-wrap').style.display = 'none';
-  const trialBadge = document.getElementById('trial-badge');
-  if (trialBadge) trialBadge.style.display = 'none';
+  document.getElementById('trial-badge').style.display = 'none';
+
+  // Show expiry badge for regular users
+  const expiryBadge = document.getElementById('expiry-badge');
+  if (expiryBadge) {
+    if (role === 'admin') {
+      expiryBadge.style.display = 'none';
+    } else {
+      const session = loadSession();
+      if (session && session.expiry) {
+        const today    = new Date(new Date().toDateString());
+        const expDate  = new Date(session.expiry);
+        const diffDays = Math.round((expDate - today) / 86400000);
+        if (diffDays <= 7) {
+          // Expiring soon — show in gold/warning
+          expiryBadge.style.background = 'rgba(255,214,10,0.12)';
+          expiryBadge.style.borderColor = 'rgba(255,214,10,0.3)';
+          expiryBadge.style.color = 'var(--gold)';
+          expiryBadge.textContent = `会员到期 ${session.expiry}（还剩 ${diffDays} 天）`;
+        } else {
+          expiryBadge.style.background = 'rgba(0,201,167,0.12)';
+          expiryBadge.style.borderColor = 'rgba(0,201,167,0.3)';
+          expiryBadge.style.color = 'var(--teal)';
+          expiryBadge.textContent = `会员有效期至 ${session.expiry}`;
+        }
+        expiryBadge.style.display = '';
+      }
+    }
+  }
+
   renderKPIs();
   renderCharts();
   renderCatFilters();
@@ -1253,23 +1289,23 @@ function handleLogout() {
 })();
 
 const RAW_DATA = [
-  { id:1, category:"食品水果类", name:"每 汕梅州坝砂村柚 特价促销，好吃好吃，一定装一袋 一箱 酸甜", sales:15000, addCart:1000, price:18.90, link:"https://xhslink.com/m/8NdYTv4sxnds", store:"小红薯6977AE83的店", fans:104, commission:3.15, salesHistory:[{date:"2025-01-20",sales:3200},{date:"2025-01-27",sales:5100},{date:"2025-02-03",sales:7800},{date:"2025-02-10",sales:9400},{date:"2025-02-17",sales:11200},{date:"2025-02-24",sales:13500},{date:"2025-03-03",sales:15000}] },
-  { id:2, category:"食品水果类", name:"贵州特产来大碗糍粑小包特种手磨超细磨细糍粑粉 50g*1袋 贵州藜藜糍粑", sales:42000, addCart:100, price:6.90, link:"https://xhslink.com/m/2mY6ND61OX", store:"小薯矩美食日记的店", fans:712, commission:3.15, salesHistory:[{date:"2025-01-20",sales:8000},{date:"2025-01-27",sales:12000},{date:"2025-02-03",sales:18000},{date:"2025-02-10",sales:24000},{date:"2025-02-17",sales:30000},{date:"2025-02-24",sales:36000},{date:"2025-03-03",sales:42000}] },
-  { id:3, category:"日化用品类", name:"1 广西贵州冷泡茉莉花心印卡印号精细糖融剂使印主使 表印主使[500酱脆时候] 白茉花水500ml*9瓶", sales:4123, addCart:4000, price:29.90, link:"https://xhslink.com/m/4o5VhERTp1m", store:"广西来莉大绿叶小样的店", fans:402, commission:3.15, salesHistory:[{date:"2025-01-20",sales:200},{date:"2025-01-27",sales:400},{date:"2025-02-03",sales:900},{date:"2025-02-10",sales:1800},{date:"2025-02-17",sales:2900},{date:"2025-02-24",sales:3600},{date:"2025-03-03",sales:4123}] },
-  { id:4, category:"百货类", name:"印销全棉决底软水洗精清淡的三件套 感受感 1.2床 三件套被套规格150x200cm 床单 160x230cm", sales:111000, addCart:500, price:105, link:"https://xhslink.com/m/BspFBUYRwD", store:"汕溪家居的店", fans:1.75, commission:3.15, salesHistory:[{date:"2025-01-20",sales:20000},{date:"2025-01-27",sales:38000},{date:"2025-02-03",sales:55000},{date:"2025-02-10",sales:72000},{date:"2025-02-17",sales:85000},{date:"2025-02-24",sales:98000},{date:"2025-03-03",sales:111000}] },
-  { id:5, category:"配件箱饰类", name:"97 韩系/八爪鱼扎带13cm五个颜色 - 棕色", sales:8518, addCart:400, price:7.90, link:"https://xhslink.com/m/79k1NZx08I2", store:"订当显特的店", fans:784, commission:3.15, salesHistory:[{date:"2025-01-20",sales:1200},{date:"2025-01-27",sales:2100},{date:"2025-02-03",sales:3400},{date:"2025-02-10",sales:4800},{date:"2025-02-17",sales:6200},{date:"2025-02-24",sales:7400},{date:"2025-03-03",sales:8518}] },
-  { id:6, category:"食品水果类", name:"正宗小米花蒸超小米花蒸香锅莲藕爆款蔬菜超产品首发", sales:5912, addCart:300, price:6.60, link:"https://xhslink.com/m/3SHDm8TDQY", store:"鲜辣蟹蟹的店", fans:100, commission:3.15, salesHistory:[{date:"2025-01-20",sales:600},{date:"2025-01-27",sales:1100},{date:"2025-02-03",sales:2000},{date:"2025-02-10",sales:3200},{date:"2025-02-17",sales:4300},{date:"2025-02-24",sales:5100},{date:"2025-03-03",sales:5912}] },
-  { id:7, category:"食品水果类", name:"黔货 贵州特产贵州糍粑预包装粽子糍粑品牌推销糍粑 中特 50g", sales:88000, addCart:1000, price:6.90, link:"https://xhslink.com/m/ADX2yYCz8u", store:"东方软软的店", fans:125, commission:3.15, salesHistory:[{date:"2025-01-20",sales:10000},{date:"2025-01-27",sales:22000},{date:"2025-02-03",sales:38000},{date:"2025-02-10",sales:52000},{date:"2025-02-17",sales:64000},{date:"2025-02-24",sales:76000},{date:"2025-03-03",sales:88000}] },
-  { id:8, category:"食品水果类", name:"9 正宗小榛玉米粒玉米粒新生食玉米高脂商贩户地道出产 净重 4.4坛玉米粒送18小时内出版外海鲜味", sales:2898, addCart:600, price:14.80, link:"https://xhslink.com/m/5BmYUvVTPiU", store:"小肠软件的店", fans:91, commission:3.15, salesHistory:[{date:"2025-01-20",sales:300},{date:"2025-01-27",sales:550},{date:"2025-02-03",sales:900},{date:"2025-02-10",sales:1400},{date:"2025-02-17",sales:1900},{date:"2025-02-24",sales:2400},{date:"2025-03-03",sales:2898}] },
-  { id:9, category:"宠物用品类", name:"懒人猫薄摆神无无无无土上垫猫毛球排毛球猫猫专猫排 FZ O1摆摆头！", sales:6450, addCart:200, price:7.90, link:"https://xhslink.com/m/5OP0qWCasW", store:"懒懒特别的店", fans:3631, commission:3.15, salesHistory:[{date:"2025-01-20",sales:900},{date:"2025-01-27",sales:1800},{date:"2025-02-03",sales:2900},{date:"2025-02-10",sales:4000},{date:"2025-02-17",sales:5000},{date:"2025-02-24",sales:5800},{date:"2025-03-03",sales:6450}] },
-  { id:10, category:"英妆类", name:"2 米利天然茉利花以及 无香精无态防腐剂卸妆印卡 1箱/9瓶", sales:15000, addCart:100, price:28.80, link:"https://xhslink.com/m/3dfq9G6T4lOm", store:"茉莉汉品-堆赶型/yyyy的店", fans:3380, commission:3.15, salesHistory:[{date:"2025-01-20",sales:1500},{date:"2025-01-27",sales:3200},{date:"2025-02-03",sales:5500},{date:"2025-02-10",sales:8000},{date:"2025-02-17",sales:10500},{date:"2025-02-24",sales:13000},{date:"2025-03-03",sales:15000}] },
-  { id:11, category:"百货类", name:"芝花坊/情儿童沙发美人美仙摸蒸摸精特棉 橘 黑色小与(三个月以内的宝宝启)", sales:42000, addCart:100, price:69.90, link:"https://xhslink.com/m/8xEYEqrhJA", store:"时光居正的店", fans:2551, commission:3.15, salesHistory:[{date:"2025-01-20",sales:5000},{date:"2025-01-27",sales:9000},{date:"2025-02-03",sales:16000},{date:"2025-02-10",sales:23000},{date:"2025-02-17",sales:30000},{date:"2025-02-24",sales:36500},{date:"2025-03-03",sales:42000}] },
-  { id:12, category:"食品水果类", name:"正宗腌牛肉肉大牛料无添加剂手工制作满足制作产品 250g/包原装 1.1平肉大 1.0斤肉大 6包", sales:25000, addCart:200, price:55, link:"https://xhslink.com/m/2ommaaHa4lRE", store:"扑扑提牛牛的店", fans:1901, commission:3.15, salesHistory:[{date:"2025-01-20",sales:3000},{date:"2025-01-27",sales:6000},{date:"2025-02-03",sales:10000},{date:"2025-02-10",sales:14000},{date:"2025-02-17",sales:18500},{date:"2025-02-24",sales:22000},{date:"2025-03-03",sales:25000}] },
-  { id:13, category:"配件箱饰类", name:"加大款老宽老宽大整天感格选感官一大天教你看一大 风大最美感情感 爱 地大效印图片好", sales:70000, addCart:400, price:8.90, link:"https://xhslink.com/m/5K9Z8PE5fI", store:"澳目目自由的店", fans:1223, commission:3.15, salesHistory:[{date:"2025-01-20",sales:8000},{date:"2025-01-27",sales:18000},{date:"2025-02-03",sales:30000},{date:"2025-02-10",sales:44000},{date:"2025-02-17",sales:55000},{date:"2025-02-24",sales:63000},{date:"2025-03-03",sales:70000}] },
-  { id:14, category:"食品水果类", name:"9 山东临沂沂蒙山沛沛公沙鸡腿半 半片/2坛收装 不带鸡汤的妈妈我喜欢发胖", sales:2706, addCart:400, price:59.90, link:"https://xhslink.com/m/887L0RXGIAP", store:"临沂鸡鸡公沙鸡特鸡公鸡的店", fans:1134, commission:3.15, salesHistory:[{date:"2025-01-20",sales:400},{date:"2025-01-27",sales:700},{date:"2025-02-03",sales:1100},{date:"2025-02-10",sales:1600},{date:"2025-02-17",sales:2000},{date:"2025-02-24",sales:2350},{date:"2025-03-03",sales:2706}] },
-  { id:15, category:"食品水果类", name:"羽衣甘蓝煎八谷精甲早餐代餐营养茶点 八谷饭料共 300g/1袋", sales:206000, addCart:1000, price:13.60, link:"https://xhslink.com/m/FG6CXfx6IX", store:"懒懒哦的店", fans:2693, commission:3.15, salesHistory:[{date:"2025-01-20",sales:25000},{date:"2025-01-27",sales:52000},{date:"2025-02-03",sales:88000},{date:"2025-02-10",sales:124000},{date:"2025-02-17",sales:155000},{date:"2025-02-24",sales:182000},{date:"2025-03-03",sales:206000}] },
-  { id:16, category:"保健养生类", name:"8 海藻情怀 平年心奇 归一到一—", sales:25000, addCart:1000, price:0.10, link:"https://xhslink.com/m/73i0?s02t.Q8i", store:"贵义义的店", fans:364, commission:3.15, salesHistory:[{date:"2025-01-20",sales:4000},{date:"2025-01-27",sales:7000},{date:"2025-02-03",sales:11000},{date:"2025-02-10",sales:15000},{date:"2025-02-17",sales:18500},{date:"2025-02-24",sales:22000},{date:"2025-03-03",sales:25000}] },
-  { id:17, category:"宠物用品类", name:"冬季温暖猫罐适合冬天冬季生牛光土猫牛光光牛 1罐装", sales:29000, addCart:400, price:9.90, link:"https://xhslink.com/m/7sJf6Z3SQaM", store:"Nippee宽柔皮的坊", fans:1243, commission:3.15, salesHistory:[{date:"2025-01-20",sales:4000},{date:"2025-01-27",sales:8000},{date:"2025-02-03",sales:13000},{date:"2025-02-10",sales:18000},{date:"2025-02-17",sales:22000},{date:"2025-02-24",sales:26000},{date:"2025-03-03",sales:29000}] }
+  { id:1, category:"食品水果类", name:"每 汕梅州坝砂村柚 特价促销，好吃好吃，一定装一袋 一箱 酸甜", sales:15000, addCart:1000, buy24h:100, price:18.90, link:"https://xhslink.com/m/8NdYTv4sxnds", store:"小红薯6977AE83的店", fans:104, commission:3.15, salesHistory:[{date:"2025-01-20",sales:3200},{date:"2025-01-27",sales:5100},{date:"2025-02-03",sales:7800},{date:"2025-02-10",sales:9400},{date:"2025-02-17",sales:11200},{date:"2025-02-24",sales:13500},{date:"2025-03-03",sales:15000}] },
+  { id:2, category:"食品水果类", name:"贵州特产来大碗糍粑小包特种手磨超细磨细糍粑粉 50g*1袋 贵州藜藜糍粑", sales:42000, addCart:100, buy24h:50, price:6.90, link:"https://xhslink.com/m/2mY6ND61OX", store:"小薯矩美食日记的店", fans:712, commission:3.15, salesHistory:[{date:"2025-01-20",sales:8000},{date:"2025-01-27",sales:12000},{date:"2025-02-03",sales:18000},{date:"2025-02-10",sales:24000},{date:"2025-02-17",sales:30000},{date:"2025-02-24",sales:36000},{date:"2025-03-03",sales:42000}] },
+  { id:3, category:"日化用品类", name:"1 广西贵州冷泡茉莉花心印卡印号精细糖融剂使印主使 表印主使[500酱脆时候] 白茉花水500ml*9瓶", sales:4123, addCart:4000, buy24h:200, price:29.90, link:"https://xhslink.com/m/4o5VhERTp1m", store:"广西来莉大绿叶小样的店", fans:402, commission:3.15, salesHistory:[{date:"2025-01-20",sales:200},{date:"2025-01-27",sales:400},{date:"2025-02-03",sales:900},{date:"2025-02-10",sales:1800},{date:"2025-02-17",sales:2900},{date:"2025-02-24",sales:3600},{date:"2025-03-03",sales:4123}] },
+  { id:4, category:"百货类", name:"印销全棉决底软水洗精清淡的三件套 感受感 1.2床 三件套被套规格150x200cm 床单 160x230cm", sales:111000, addCart:500, buy24h:500, price:105, link:"https://xhslink.com/m/BspFBUYRwD", store:"汕溪家居的店", fans:1.75, commission:3.15, salesHistory:[{date:"2025-01-20",sales:20000},{date:"2025-01-27",sales:38000},{date:"2025-02-03",sales:55000},{date:"2025-02-10",sales:72000},{date:"2025-02-17",sales:85000},{date:"2025-02-24",sales:98000},{date:"2025-03-03",sales:111000}] },
+  { id:5, category:"配件箱饰类", name:"97 韩系/八爪鱼扎带13cm五个颜色 - 棕色", sales:8518, addCart:400, buy24h:80, price:7.90, link:"https://xhslink.com/m/79k1NZx08I2", store:"订当显特的店", fans:784, commission:3.15, salesHistory:[{date:"2025-01-20",sales:1200},{date:"2025-01-27",sales:2100},{date:"2025-02-03",sales:3400},{date:"2025-02-10",sales:4800},{date:"2025-02-17",sales:6200},{date:"2025-02-24",sales:7400},{date:"2025-03-03",sales:8518}] },
+  { id:6, category:"食品水果类", name:"正宗小米花蒸超小米花蒸香锅莲藕爆款蔬菜超产品首发", sales:5912, addCart:300, buy24h:60, price:6.60, link:"https://xhslink.com/m/3SHDm8TDQY", store:"鲜辣蟹蟹的店", fans:100, commission:3.15, salesHistory:[{date:"2025-01-20",sales:600},{date:"2025-01-27",sales:1100},{date:"2025-02-03",sales:2000},{date:"2025-02-10",sales:3200},{date:"2025-02-17",sales:4300},{date:"2025-02-24",sales:5100},{date:"2025-03-03",sales:5912}] },
+  { id:7, category:"食品水果类", name:"黔货 贵州特产贵州糍粑预包装粽子糍粑品牌推销糍粑 中特 50g", sales:88000, addCart:1000, buy24h:800, price:6.90, link:"https://xhslink.com/m/ADX2yYCz8u", store:"东方软软的店", fans:125, commission:3.15, salesHistory:[{date:"2025-01-20",sales:10000},{date:"2025-01-27",sales:22000},{date:"2025-02-03",sales:38000},{date:"2025-02-10",sales:52000},{date:"2025-02-17",sales:64000},{date:"2025-02-24",sales:76000},{date:"2025-03-03",sales:88000}] },
+  { id:8, category:"食品水果类", name:"9 正宗小榛玉米粒玉米粒新生食玉米高脂商贩户地道出产 净重 4.4坛玉米粒送18小时内出版外海鲜味", sales:2898, addCart:600, buy24h:150, price:14.80, link:"https://xhslink.com/m/5BmYUvVTPiU", store:"小肠软件的店", fans:91, commission:3.15, salesHistory:[{date:"2025-01-20",sales:300},{date:"2025-01-27",sales:550},{date:"2025-02-03",sales:900},{date:"2025-02-10",sales:1400},{date:"2025-02-17",sales:1900},{date:"2025-02-24",sales:2400},{date:"2025-03-03",sales:2898}] },
+  { id:9, category:"宠物用品类", name:"懒人猫薄摆神无无无无土上垫猫毛球排毛球猫猫专猫排 FZ O1摆摆头！", sales:6450, addCart:200, buy24h:40, price:7.90, link:"https://xhslink.com/m/5OP0qWCasW", store:"懒懒特别的店", fans:3631, commission:3.15, salesHistory:[{date:"2025-01-20",sales:900},{date:"2025-01-27",sales:1800},{date:"2025-02-03",sales:2900},{date:"2025-02-10",sales:4000},{date:"2025-02-17",sales:5000},{date:"2025-02-24",sales:5800},{date:"2025-03-03",sales:6450}] },
+  { id:10, category:"英妆类", name:"2 米利天然茉利花以及 无香精无态防腐剂卸妆印卡 1箱/9瓶", sales:15000, addCart:100, buy24h:30, price:28.80, link:"https://xhslink.com/m/3dfq9G6T4lOm", store:"茉莉汉品-堆赶型/yyyy的店", fans:3380, commission:3.15, salesHistory:[{date:"2025-01-20",sales:1500},{date:"2025-01-27",sales:3200},{date:"2025-02-03",sales:5500},{date:"2025-02-10",sales:8000},{date:"2025-02-17",sales:10500},{date:"2025-02-24",sales:13000},{date:"2025-03-03",sales:15000}] },
+  { id:11, category:"百货类", name:"芝花坊/情儿童沙发美人美仙摸蒸摸精特棉 橘 黑色小与(三个月以内的宝宝启)", sales:42000, addCart:100, buy24h:90, price:69.90, link:"https://xhslink.com/m/8xEYEqrhJA", store:"时光居正的店", fans:2551, commission:3.15, salesHistory:[{date:"2025-01-20",sales:5000},{date:"2025-01-27",sales:9000},{date:"2025-02-03",sales:16000},{date:"2025-02-10",sales:23000},{date:"2025-02-17",sales:30000},{date:"2025-02-24",sales:36500},{date:"2025-03-03",sales:42000}] },
+  { id:12, category:"食品水果类", name:"正宗腌牛肉肉大牛料无添加剂手工制作满足制作产品 250g/包原装 1.1平肉大 1.0斤肉大 6包", sales:25000, addCart:200, buy24h:120, price:55, link:"https://xhslink.com/m/2ommaaHa4lRE", store:"扑扑提牛牛的店", fans:1901, commission:3.15, salesHistory:[{date:"2025-01-20",sales:3000},{date:"2025-01-27",sales:6000},{date:"2025-02-03",sales:10000},{date:"2025-02-10",sales:14000},{date:"2025-02-17",sales:18500},{date:"2025-02-24",sales:22000},{date:"2025-03-03",sales:25000}] },
+  { id:13, category:"配件箱饰类", name:"加大款老宽老宽大整天感格选感官一大天教你看一大 风大最美感情感 爱 地大效印图片好", sales:70000, addCart:400, buy24h:350, price:8.90, link:"https://xhslink.com/m/5K9Z8PE5fI", store:"澳目目自由的店", fans:1223, commission:3.15, salesHistory:[{date:"2025-01-20",sales:8000},{date:"2025-01-27",sales:18000},{date:"2025-02-03",sales:30000},{date:"2025-02-10",sales:44000},{date:"2025-02-17",sales:55000},{date:"2025-02-24",sales:63000},{date:"2025-03-03",sales:70000}] },
+  { id:14, category:"食品水果类", name:"9 山东临沂沂蒙山沛沛公沙鸡腿半 半片/2坛收装 不带鸡汤的妈妈我喜欢发胖", sales:2706, addCart:400, buy24h:70, price:59.90, link:"https://xhslink.com/m/887L0RXGIAP", store:"临沂鸡鸡公沙鸡特鸡公鸡的店", fans:1134, commission:3.15, salesHistory:[{date:"2025-01-20",sales:400},{date:"2025-01-27",sales:700},{date:"2025-02-03",sales:1100},{date:"2025-02-10",sales:1600},{date:"2025-02-17",sales:2000},{date:"2025-02-24",sales:2350},{date:"2025-03-03",sales:2706}] },
+  { id:15, category:"食品水果类", name:"羽衣甘蓝煎八谷精甲早餐代餐营养茶点 八谷饭料共 300g/1袋", sales:206000, addCart:1000, buy24h:1000, price:13.60, link:"https://xhslink.com/m/FG6CXfx6IX", store:"懒懒哦的店", fans:2693, commission:3.15, salesHistory:[{date:"2025-01-20",sales:25000},{date:"2025-01-27",sales:52000},{date:"2025-02-03",sales:88000},{date:"2025-02-10",sales:124000},{date:"2025-02-17",sales:155000},{date:"2025-02-24",sales:182000},{date:"2025-03-03",sales:206000}] },
+  { id:16, category:"保健养生类", name:"8 海藻情怀 平年心奇 归一到一—", sales:25000, addCart:1000, buy24h:200, price:0.10, link:"https://xhslink.com/m/73i0?s02t.Q8i", store:"贵义义的店", fans:364, commission:3.15, salesHistory:[{date:"2025-01-20",sales:4000},{date:"2025-01-27",sales:7000},{date:"2025-02-03",sales:11000},{date:"2025-02-10",sales:15000},{date:"2025-02-17",sales:18500},{date:"2025-02-24",sales:22000},{date:"2025-03-03",sales:25000}] },
+  { id:17, category:"宠物用品类", name:"冬季温暖猫罐适合冬天冬季生牛光土猫牛光光牛 1罐装", sales:29000, addCart:400, buy24h:180, price:9.90, link:"https://xhslink.com/m/7sJf6Z3SQaM", store:"Nippee宽柔皮的坊", fans:1243, commission:3.15, salesHistory:[{date:"2025-01-20",sales:4000},{date:"2025-01-27",sales:8000},{date:"2025-02-03",sales:13000},{date:"2025-02-10",sales:18000},{date:"2025-02-17",sales:22000},{date:"2025-02-24",sales:26000},{date:"2025-03-03",sales:29000}] }
 ];
 
 const CAT_STYLES = {
@@ -1313,14 +1349,21 @@ function renderKPIs() {
     return fansNum < 500 && d.addCart > 500;
   }).length;
 
-  // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且日均销量 > 100
+  // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且 24h购买人数 > 100
   const hidden = RAW_DATA.filter(d => {
     const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
-    return fansNum < 500 && d.addCart < 100 && (d.sales / 30) > 100;
+    return fansNum < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
+  }).length;
+
+  // 高粉爆品：粉丝 > 5000 且 24h加购 > 500
+  const highFansBoom = RAW_DATA.filter(d => {
+    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    return fansNum > 5000 && d.addCart > 500;
   }).length;
 
   document.getElementById('kpi-total').textContent = total;
   document.getElementById('kpi-low-fans').textContent = lowFansBoom;
+  document.getElementById('kpi-high-fans').textContent = highFansBoom;
   document.getElementById('kpi-hidden').textContent = hidden;
 }
 
@@ -1454,6 +1497,7 @@ function getFiltered() {
   const sort = document.getElementById('sort-select').value;
   if (sort === 'sales') data.sort((a,b) => b.sales - a.sales);
   else if (sort === 'addCart') data.sort((a,b) => b.addCart - a.addCart);
+  else if (sort === 'buy24h') data.sort((a,b) => (b.buy24h||0) - (a.buy24h||0));
   else if (sort === 'price') data.sort((a,b) => b.price - a.price);
   else if (sort === 'revenue') data.sort((a,b) => estimateRevenue(b) - estimateRevenue(a));
   else if (sort === 'fans') data.sort((a,b) => b.fans - a.fans);
@@ -1490,14 +1534,20 @@ function renderTable() {
     const barW = Math.round((item.sales / maxSales) * 100);
 
     const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
-    const isLowFansBoom   = fansNum < 500 && item.addCart > 500;
-    const isHidden        = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
+    const isLowFansBoom  = fansNum < 500 && item.addCart > 500;
+    const isHighFansBoom = fansNum > 5000 && item.addCart > 500;
+    const isHidden       = fansNum < 500 && item.addCart < 100 && (item.buy24h || 0) > 100;
 
+    // 优先级：低粉爆品 > 隐藏潜力 > 高粉爆品
     const signalTag = isLowFansBoom
       ? '<span class="hot-tag" style="background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.3);color:#00c9a7">💥 低粉爆品</span>'
       : isHidden
       ? '<span class="hot-tag" style="background:rgba(191,90,242,0.13);border-color:rgba(191,90,242,0.3);color:#bf5af2">🌱 隐藏潜力</span>'
+      : isHighFansBoom
+      ? '<span class="hot-tag" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a">👑 高粉爆品</span>'
       : '';
+
+    const buy24hDisplay = item.buy24h ? item.buy24h.toLocaleString() + '+' : '—';
     const fav = isFav(item.id);
     return `
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
@@ -1517,6 +1567,7 @@ function renderTable() {
           </div>
         </td>
         <td><span class="add-to-cart">+${item.addCart.toLocaleString()}</span></td>
+        <td><span style="font-family:var(--mono);font-size:12px;color:var(--purple)">${buy24hDisplay}</span></td>
         <td><span class="price-num">¥${item.price.toFixed(2)}</span></td>
         <td><span class="fans-num">${typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString()}</span></td>
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
@@ -2003,7 +2054,7 @@ function exportExcel() {
 
   // BOM + header
   const BOM = '\uFEFF';
-  const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
+  const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','24h购买人数','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
 
   const rows = filtered.map((item, idx) => {
     const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
@@ -2020,6 +2071,7 @@ function exportExcel() {
       '"' + item.store.replace(/"/g, '""') + '"',
       item.sales,
       item.addCart,
+      item.buy24h || 0,
       item.price.toFixed(2),
       fans,
       gmv,
