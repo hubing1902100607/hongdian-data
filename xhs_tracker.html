@@ -908,6 +908,10 @@
       <option value="fans">按粉丝数排序</option>
     </select>
     <div class="results-count" id="results-count"></div>
+    <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
+      📊 导出 Excel
+    </button>
+    <button class="filter-btn" onclick="exportToExcel()" style="background:var(--teal-dim);border-color:rgba(0,201,167,0.3);color:var(--teal);white-space:nowrap;">📥 导出 Excel</button>
   </div>
 
   <!-- Table -->
@@ -1672,6 +1676,39 @@ function closeModalBtn() {
   if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
 }
 
+// ── Export to Excel (CSV) ────────────────────────────────
+function exportToExcel() {
+  const data = getFiltered();
+  const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格','店铺粉丝','预估GMV','商品链接'];
+  const rows = data.map((item, idx) => {
+    const gmv = estimateRevenue(item);
+    const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans;
+    return [
+      idx + 1,
+      item.category,
+      '"' + item.name.replace(/"/g, '""') + '"',
+      '"' + item.store.replace(/"/g, '""') + '"',
+      item.sales,
+      item.addCart,
+      item.price.toFixed(2),
+      fansDisplay,
+      gmv.toFixed(0),
+      item.link,
+    ].join(',');
+  });
+
+  const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `红点数据_${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+// ── End Export ───────────────────────────────────────────
+
 // ── Import modal ────────────────────────────────────────────
 let pendingImportRows = [];   // parsed + matched rows, ready to commit
 
@@ -1873,9 +1910,51 @@ function confirmImport() {
   setTimeout(() => closeImportModalBtn(), 2200);
 }
 
-// ── End Import ───────────────────────────────────────────────
-// Note: renderKPIs / renderCharts / renderCatFilters / renderTable
-// are all called inside enterApp() after successful login.
+// ── Export Excel ─────────────────────────────────────────
+function exportExcel() {
+  const filtered = getFiltered();
+  const maxSales = Math.max(...RAW_DATA.map(d => d.sales));
+
+  // BOM + header
+  const BOM = '\uFEFF';
+  const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
+
+  const rows = filtered.map((item, idx) => {
+    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
+    const isLowFansBoom = fansNum < 500 && item.addCart > 500;
+    const isHidden      = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
+    const signal = isLowFansBoom ? '💥低粉爆品' : isHidden ? '🌱隐藏潜力' : '';
+    const gmv = (item.sales * item.price).toFixed(0);
+    const fans = typeof item.fans === 'number' && item.fans < 10 ? item.fans + 'w' : item.fans;
+
+    return [
+      idx + 1,
+      item.category,
+      '"' + item.name.replace(/"/g, '""') + '"',   // quote-wrap to handle commas
+      '"' + item.store.replace(/"/g, '""') + '"',
+      item.sales,
+      item.addCart,
+      item.price.toFixed(2),
+      fans,
+      gmv,
+      '"' + item.link + '"',
+      signal,
+    ].join(',');
+  });
+
+  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `红点数据_爆款列表_${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+// ── End Export ────────────────────────────────────────────
+
+
 </script>
 </body>
 </html>
