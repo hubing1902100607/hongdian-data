@@ -894,17 +894,17 @@
     <div class="kpi-card">
       <div class="kpi-label">💥 低粉爆品</div>
       <div class="kpi-value" id="kpi-low-fans">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &gt;500</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">👑 高粉爆品</div>
       <div class="kpi-value" id="kpi-high-fans">—</div>
-      <div class="kpi-desc">粉丝 &gt;5000 · 加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 &gt;5000 · 24h加购 &gt;500</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 加购 &lt;100 · 24h购买 &gt;100</div>
+      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &lt;100 · 24h购买 &gt;100</div>
     </div>
   </div>
 
@@ -1913,14 +1913,6 @@ function parseFans(raw) {
 
 function parseCSV(text) {
   try {
-    _parseCSVInner(text);
-  } catch(err) {
-    alert('解析出错：' + err.message + '\n\n请截图发给客服');
-    console.error(err);
-  }
-}
-
-function _parseCSVInner(text) {
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
   if (lines.length < 2) { alert('文件内容为空或格式不对'); return; }
 
@@ -2016,6 +2008,10 @@ function _parseCSVInner(text) {
 
   preview.classList.add('show');
   if (matched > 0) document.getElementById('import-confirm-btn').classList.add('show');
+  } catch(err) {
+    alert('解析出错：' + err.message + '\n\n请截图联系客服');
+    console.error(err);
+  }
 }
 
 function confirmImport() {
