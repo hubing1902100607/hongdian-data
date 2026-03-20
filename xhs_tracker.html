@@ -878,6 +878,7 @@
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
     <a href="membership.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
+    <button onclick="openContactModal()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">💬 联系</button>
   </div>
 </header>
 
@@ -989,7 +990,18 @@
   </div>
 </div>
 
-<!-- Import Modal -->
+<!-- Contact Modal -->
+<div class="modal-overlay" id="contact-overlay" onclick="if(event.target===this)closeContactModal()" style="display:none;">
+  <div class="modal" style="max-width:320px;text-align:center;">
+    <button class="modal-close" onclick="closeContactModal()">✕</button>
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px;">联系开发者</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;">微信扫码添加，欢迎咨询与合作</div>
+    <img src="wechat_personal_qr.png" alt="个人微信二维码"
+      style="width:200px;height:200px;border-radius:12px;object-fit:cover;margin:0 auto 12px;display:block;border:1px solid var(--border);">
+    <div style="font-size:12px;color:var(--text3);font-family:var(--mono);">beiyuanbitan01</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">选品咨询 · 数据定制 · 功能建议</div>
+  </div>
+</div>
 <div class="modal-overlay" id="import-overlay" onclick="closeImportModal(event)">
   <div class="modal" id="import-modal" style="max-width:560px">
     <button class="modal-close" onclick="closeImportModalBtn()">✕</button>
@@ -1800,6 +1812,13 @@ function exportToExcel() {
 }
 // ── End Export ───────────────────────────────────────────
 
+function openContactModal() {
+  document.getElementById('contact-overlay').style.display = 'flex';
+}
+function closeContactModal() {
+  document.getElementById('contact-overlay').style.display = 'none';
+}
+
 // ── Import modal ────────────────────────────────────────────
 let pendingImportRows = [];   // parsed + matched rows, ready to commit
 
@@ -1845,28 +1864,66 @@ function handleFileSelect(input) {
 function processFile(file) {
   const name = file.name.toLowerCase();
   if (name.endsWith('.csv')) {
-    const reader = new FileReader();
-    reader.onload = e => parseCSV(e.target.result);
-    reader.readAsText(file, 'UTF-8');
+    // Try GBK first, fallback to UTF-8
+    const readerGBK = new FileReader();
+    readerGBK.onload = e => {
+      const text = e.target.result;
+      // If result contains replacement chars (GBK decoded as latin1), the BOM/header will be garbled
+      // Simple heuristic: if header has recognisable Chinese after GBK decode, use it
+      parseCSV(text);
+    };
+    readerGBK.readAsText(file, 'GBK');
   } else {
-    alert('请上传 CSV 格式文件（.csv）。如果你的文件是 Excel，请在 Excel 中另存为 CSV 再上传。');
+    alert('请上传 CSV 格式文件（.csv）。');
   }
 }
 
+function normalizeDate(raw) {
+  if (!raw) return new Date().toISOString().slice(0,10);
+  const s = raw.trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // M.DD or MM.DD → 2025-MM-DD
+  const md = s.match(/^(\d{1,2})\.(\d{1,2})$/);
+  if (md) {
+    const year = new Date().getFullYear();
+    return `${year}-${md[1].padStart(2,'0')}-${md[2].padStart(2,'0')}`;
+  }
+  return new Date().toISOString().slice(0,10);
+}
+
+function parsePrice(raw) {
+  if (!raw) return null;
+  // Strip ¥ and any full-width ¥ (￥) and spaces
+  const cleaned = String(raw).replace(/[¥￥\s]/g,'');
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? null : val;
+}
+
+function parseFans(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  // Handles: 1.9w / 1.9万 / 19000 / 未找到
+  if (s === '未找到' || s === '-' || s === '') return null;
+  const wMatch = s.match(/^([\d.]+)[wW万]/);
+  if (wMatch) return Math.round(parseFloat(wMatch[1]) * 10000);
+  const val = parseFloat(s);
+  return isNaN(val) ? null : val;
+}
+
 function parseCSV(text) {
-  // Normalise line endings, split into lines, drop empties
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
   if (lines.length < 2) { alert('文件内容为空或格式不对'); return; }
 
-  // Parse header — trim BOM and whitespace
+  // Strip BOM
   const header = lines[0].replace(/^\uFEFF/,'').split(',').map(h => h.trim());
 
-  // Required column name aliases
   const aliases = {
     date:    ['日期','date','更新时间','时间'],
     link:    ['商品链接','链接','link','产品链接'],
     sales:   ['销量','月销量','商品销量','sales'],
-    addCart: ['24小时加购','24h加购','加购','addcart','add_cart'],
+    addCart: ['24小时加购','24h加购','加购','addcart','add_cart','24小时加购数'],
+    buy24h:  ['24小时购买人数','24h购买','购买人数','24h购买人数','buy24h'],
     price:   ['价格','售价','price'],
     fans:    ['店铺粉丝','粉丝','fans','粉丝数'],
   };
@@ -1884,32 +1941,32 @@ function parseCSV(text) {
   const colLink    = findCol('link');
   const colSales   = findCol('sales');
   const colAddCart = findCol('addCart');
+  const colBuy24h  = findCol('buy24h');
   const colPrice   = findCol('price');
   const colFans    = findCol('fans');
 
   if (colLink === -1 || colSales === -1) {
-    alert('CSV 缺少必要列：「商品链接」和「销量」是必须的，请检查列名。\n\n当前列名：' + header.join(', '));
+    alert('CSV 缺少必要列：「商品链接」和「销量」是必须的，请检查列名。\n\n当前识别到的列名：\n' + header.join('\n'));
     return;
   }
 
-  // Get today as fallback date
   const today = new Date().toISOString().slice(0,10);
 
-  // Parse data rows
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',').map(c => c.trim());
     if (cols.length < 2) continue;
-    const link  = cols[colLink]  || '';
+    const link  = (cols[colLink] || '').trim();
     const sales = parseInt(cols[colSales]) || 0;
     if (!link || !sales) continue;
     rows.push({
-      date:    colDate    !== -1 ? (cols[colDate] || today) : today,
-      link:    link.trim(),
+      date:    normalizeDate(colDate !== -1 ? cols[colDate] : ''),
+      link,
       sales,
       addCart: colAddCart !== -1 ? (parseInt(cols[colAddCart]) || null) : null,
-      price:   colPrice   !== -1 ? (parseFloat(cols[colPrice]) || null) : null,
-      fans:    colFans    !== -1 ? (parseFloat(cols[colFans])  || null) : null,
+      buy24h:  colBuy24h  !== -1 ? (parseInt(cols[colBuy24h])  || null) : null,
+      price:   colPrice   !== -1 ? parsePrice(cols[colPrice])           : null,
+      fans:    colFans    !== -1 ? parseFans(cols[colFans])             : null,
     });
   }
 
@@ -1930,12 +1987,11 @@ function parseCSV(text) {
     `共解析 ${rows.length} 行 · 匹配成功 ${matched} 个商品 · 未匹配 ${unmatched} 个`;
 
   const previewRows = document.getElementById('preview-rows');
-  // Show all matched first, then unmatched (max 20 total to keep modal tidy)
   const sorted = [...pendingImportRows].sort((a,b) => a.status === 'unmatched' ? 1 : -1).slice(0,20);
   previewRows.innerHTML = sorted.map(r => {
     const tagClass = r.status === 'matched' ? 'tag-matched' : 'tag-unmatched';
     const tagText  = r.status === 'matched' ? '✓ 匹配' : '✗ 未找到';
-    const salesTxt = r.status === 'matched' ? `+${r.sales.toLocaleString()} 件` : '—';
+    const salesTxt = r.status === 'matched' ? `${r.sales.toLocaleString()} 件` : '—';
     return `
       <div class="preview-row">
         <span class="preview-name">${r.status === 'matched' ? r.itemName.slice(0,30)+'…' : r.link.slice(0,40)}</span>
@@ -1975,6 +2031,7 @@ function confirmImport() {
     // Update top-level sales to latest value
     item.sales = row.sales;
     if (row.addCart !== null) item.addCart = row.addCart;
+    if (row.buy24h  !== null) item.buy24h  = row.buy24h;
     if (row.price   !== null) item.price   = row.price;
     if (row.fans    !== null) item.fans    = row.fans;
 
