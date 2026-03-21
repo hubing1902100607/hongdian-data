@@ -1060,15 +1060,42 @@ let _iCount             = 0;       // 管理员快捷键计数
 let _iTimer             = null;    // 管理员快捷键计时器
 // ═══════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════
+//  全局配置常量区（置顶，防止 TDZ 报错）
+// ══════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = 'beiyuanbitan1902100607';
+const HMAC_SECRET    = 'hd_bynb_2025_secret_key';
+const SESSION_KEY    = 'hd_session';
+const WORKER_URL     = 'https://hongdian-data.binghu253.workers.dev';
+const DATA_KEY       = 'hd_raw_data';
+const PAGE_SIZE      = 10;
+const FAV_KEY        = 'hd_favourites';
+const CAT_STYLES = {
+  "食品水果类": "cat-food",
+  "日化用品类": "cat-daily",
+  "百货类":     "cat-home",
+  "配件首饰类": "cat-home",
+  "摆件挂饰类": "cat-home",
+  "宠物用品类": "cat-pet",
+  "美妆类目":   "cat-daily",
+  "保健养生类": "cat-health",
+  "服饰鞋包类": "cat-home",
+  "虚拟产品类": "cat-health",
+  "数码设备类": "cat-home",
+  "健身器材类": "cat-health",
+  "绿植类":     "cat-pet",
+  "美妆类":     "cat-daily",
+  "配件箱饰类": "cat-home",
+};
+// ══════════════════════════════════════════════════════════
+
+
 
 // ══════════════════════════════════════════════════════════
 //  AUTH CONFIG — 只需修改这里
 // ══════════════════════════════════════════════════════════
-const ADMIN_PASSWORD = 'beiyuanbitan1902100607';
-const HMAC_SECRET    = 'hd_bynb_2025_secret_key'; // 与生成器保持一致，勿泄露
 // ══════════════════════════════════════════════════════════
 
-const SESSION_KEY = 'hd_session';
 function getFingerprint() {
   const raw = [
     navigator.userAgent,
@@ -1185,8 +1212,6 @@ function showLoginError(id, msg) {
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 4500);
 }
-
-const WORKER_URL = 'https://hongdian-data.binghu253.workers.dev';
 
 function tryLogin() {
   const val = document.getElementById('login-input').value.trim();
@@ -1430,8 +1455,6 @@ const RAW_DATA = [
 ];
 
 // ── Boot ──────────────────────────────────────────────────
-const DATA_KEY = 'hd_raw_data';
-
 function loadPersistedData() {
   try {
     const saved = localStorage.getItem(DATA_KEY);
@@ -1484,25 +1507,7 @@ function persistData() {
   }
 })();
 
-const CAT_STYLES = {
-  "食品水果类": "cat-food",
-  "日化用品类": "cat-daily",
-  "百货类":     "cat-home",
-  "配件首饰类": "cat-home",
-  "摆件挂饰类": "cat-home",
-  "宠物用品类": "cat-pet",
-  "美妆类目":   "cat-daily",
-  "保健养生类": "cat-health",
-  "服饰鞋包类": "cat-home",
-  "虚拟产品类": "cat-health",
-  "数码设备类": "cat-home",
-  "健身器材类": "cat-health",
-  "绿植类":     "cat-pet",
-  "美妆类":     "cat-daily",
-  "配件箱饰类": "cat-home",
-};
 
-const PAGE_SIZE = 10;
 
 function fmt(n) {
   if (n >= 10000) return (n/10000).toFixed(1) + 'w';
@@ -2242,8 +2247,6 @@ function confirmImport() {
 }
 
 // ── Favourites ────────────────────────────────────────────
-const FAV_KEY = 'hd_favourites';
-
 function loadFavs() {
   try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; }
 }
