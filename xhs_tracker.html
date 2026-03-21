@@ -1173,30 +1173,62 @@ function showLoginError(id, msg) {
   setTimeout(() => { el.style.display = 'none'; }, 4500);
 }
 
+const WORKER_URL = 'https://hongdian-data.binghu253.workers.dev';
+
 function tryLogin() {
   const val = document.getElementById('login-input').value.trim();
   if (!val) return;
 
-  // Silent admin check (case-insensitive)
-  if (val.toUpperCase() === ADMIN_PASSWORD.toUpperCase()) {
-    saveSession('admin', null, null);
-    enterApp('admin');
-    return;
-  }
+  const btn = document.querySelector('#login-screen button[onclick="tryLogin()"]');
+  if (btn) { btn.textContent = '验证中…'; btn.disabled = true; }
 
-  const result = verifyActivationCode(val);
-  if (!result.valid) {
-    showLoginError('login-error', result.error);
-    return;
-  }
-
-  if (result.role === 'admin') {
-    saveSession('admin', null, null);
-    enterApp('admin');
-  } else {
+  fetch(WORKER_URL + '/api/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: val, fp: DEVICE_FP })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (btn) { btn.textContent = '激活'; btn.disabled = false; }
+    if (!data.ok) {
+      showLoginError('login-error', data.error || '激活失败，请重试');
+      return;
+    }
+    saveSession(data.role, val.toUpperCase(), data.expiry);
+    loadProductsAndEnter(data.role, val.toUpperCase());
+  })
+  .catch(() => {
+    if (btn) { btn.textContent = '激活'; btn.disabled = false; }
+    // 网络失败时降级到本地验证
+    const isAdmin = val.toUpperCase() === ADMIN_PASSWORD.toUpperCase();
+    if (isAdmin) {
+      saveSession('admin', null, null);
+      loadProductsAndEnter('admin', null);
+      return;
+    }
+    const result = verifyActivationCode(val);
+    if (!result.valid) { showLoginError('login-error', result.error); return; }
     saveSession('user', val.toUpperCase(), result.expiry);
-    enterApp('user');
-  }
+    loadProductsAndEnter('user', val.toUpperCase());
+  });
+}
+
+function loadProductsAndEnter(role, code) {
+  const auth = role === 'admin' ? ADMIN_PASSWORD : (code || '');
+  fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth))
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok && data.products && data.products.length) {
+      // 用服务器数据替换本地 RAW_DATA
+      RAW_DATA.length = 0;
+      data.products.forEach(p => RAW_DATA.push(p));
+    }
+    enterApp(role);
+  })
+  .catch(() => {
+    // 网络失败降级用本地数据
+    enterApp(role);
+  });
 }
 
 // ── Session helpers ───────────────────────────────────────
@@ -1306,16 +1338,28 @@ function persistData() {
 }
 
 (function boot() {
-  // Show product code immediately
   const el = document.getElementById('product-code-display');
   if (el) el.textContent = formatProductCode(DEVICE_FP);
 
-  // Load any previously imported data from localStorage
-  loadPersistedData();
-
   const session = loadSession();
   if (isSessionValid(session)) {
+    // 有有效会话，直接用本地数据先显示，然后后台拉最新数据
+    loadPersistedData();
     enterApp(session.role);
+    // 后台静默更新
+    const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
+    fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth))
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && data.products && data.products.length) {
+        RAW_DATA.length = 0;
+        data.products.forEach(p => RAW_DATA.push(p));
+        persistData();
+        renderKPIs(); renderCharts(); renderCatFilters(); renderTable();
+        updateFavBtn();
+      }
+    })
+    .catch(() => {});
   } else {
     clearSession();
     document.getElementById('login-screen').style.display = 'flex';
@@ -2084,25 +2128,25 @@ function parseCSV(text) {
   if (!rows.length) { alert('解析后没有有效数据行，请检查文件内容'); return; }
 
   // Match against RAW_DATA by link
-  let matched = 0, unmatched = 0;
+  let matched = 0, newItems = 0;
   pendingImportRows = rows.map(row => {
     const item = RAW_DATA.find(d => d.link.trim() === row.link);
     if (item) { matched++; return { ...row, itemId: item.id, itemName: item.name, status: 'matched' }; }
-    unmatched++;
-    return { ...row, itemId: null, itemName: row.link, status: 'unmatched' };
+    newItems++;
+    return { ...row, itemId: null, itemName: row.link, status: 'new' };
   });
 
   // Render preview
   const preview = document.getElementById('import-preview');
   document.getElementById('preview-summary').textContent =
-    `共解析 ${rows.length} 行 · 匹配成功 ${matched} 个商品 · 未匹配 ${unmatched} 个`;
+    `共解析 ${rows.length} 行 · 更新 ${matched} 个已有商品 · 新增 ${newItems} 个新商品`;
 
   const previewRows = document.getElementById('preview-rows');
-  const sorted = [...pendingImportRows].sort((a,b) => a.status === 'unmatched' ? 1 : -1).slice(0,20);
+  const sorted = [...pendingImportRows].sort((a,b) => a.status === 'new' ? 1 : -1).slice(0,20);
   previewRows.innerHTML = sorted.map(r => {
-    const tagClass = r.status === 'matched' ? 'tag-matched' : 'tag-unmatched';
-    const tagText  = r.status === 'matched' ? '✓ 匹配' : '✗ 未找到';
-    const salesTxt = r.status === 'matched' ? `${r.sales.toLocaleString()} 件` : '—';
+    const tagClass = r.status === 'matched' ? 'tag-matched' : 'tag-new';
+    const tagText  = r.status === 'matched' ? '✓ 更新' : '＋ 新增';
+    const salesTxt = r.sales.toLocaleString() + ' 件';
     return `
       <div class="preview-row">
         <span class="preview-name">${r.status === 'matched' ? r.itemName.slice(0,30)+'…' : r.link.slice(0,40)}</span>
@@ -2117,7 +2161,7 @@ function parseCSV(text) {
   }
 
   preview.classList.add('show');
-  if (matched > 0) document.getElementById('import-confirm-btn').classList.add('show');
+  document.getElementById('import-confirm-btn').classList.add('show');
   } catch(err) {
     alert('解析出错：' + err.message + '\n\n请截图联系客服');
     console.error(err);
@@ -2125,55 +2169,65 @@ function parseCSV(text) {
 }
 
 function confirmImport() {
-  const date = pendingImportRows.find(r => r.date)?.date || new Date().toISOString().slice(0,10);
-  let updatedCount = 0;
+  const confirmBtn = document.getElementById('import-confirm-btn');
+  if (confirmBtn) { confirmBtn.textContent = '上传中…'; confirmBtn.disabled = true; }
 
-  pendingImportRows.forEach(row => {
-    if (row.status !== 'matched') return;
-    const item = RAW_DATA.find(d => d.id === row.itemId);
-    if (!item) return;
+  // Send ALL rows to Worker (new + existing), Worker handles both
+  const rowsToSend = pendingImportRows.map(row => ({
+    link:     row.link,
+    sales:    row.sales,
+    date:     row.date,
+    addCart:  row.addCart,
+    buy24h:   row.buy24h,
+    price:    row.price,
+    fans:     row.fans,
+    name:     row.itemName && row.status === 'matched' ? row.itemName : '',
+    category: '',
+    store:    '',
+  }));
 
-    // Check if this date already exists in history — update in place if so
-    const existing = item.salesHistory.find(h => h.date === row.date);
-    if (existing) {
-      existing.sales = row.sales;
-    } else {
-      item.salesHistory.push({ date: row.date, sales: row.sales });
-      // Keep chronological order
-      item.salesHistory.sort((a,b) => a.date.localeCompare(b.date));
-    }
+  fetch(WORKER_URL + '/api/import', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': ADMIN_PASSWORD,
+    },
+    body: JSON.stringify({ rows: rowsToSend }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (confirmBtn) { confirmBtn.textContent = '确认导入并更新趋势数据'; confirmBtn.disabled = false; }
+    if (!data.ok) { alert('导入失败：' + data.error); return; }
 
-    // Update top-level sales to latest value
-    item.sales = row.sales;
-    if (row.addCart !== null) item.addCart = row.addCart;
-    if (row.buy24h  !== null) item.buy24h  = row.buy24h;
-    if (row.price   !== null) item.price   = row.price;
-    if (row.fans    !== null) item.fans    = row.fans;
+    // 重新从 Worker 拉取最新数据
+    return fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD))
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.products) {
+          RAW_DATA.length = 0;
+          d.products.forEach(p => RAW_DATA.push(p));
+          persistData();
+        }
+        renderKPIs();
+        Chart.getChart('chart-sales')?.destroy();
+        Chart.getChart('chart-category')?.destroy();
+        Chart.getChart('chart-price')?.destroy();
+        renderCharts();
+        renderCatFilters();
+        renderTable();
 
-    updatedCount++;
+        document.getElementById('import-main').style.display = 'none';
+        const success = document.getElementById('import-success');
+        document.getElementById('import-success-msg').textContent =
+          `成功更新 ${data.updated} 个商品，新增 ${data.added} 个商品，共 ${data.total} 条数据`;
+        success.classList.add('show');
+        setTimeout(() => closeImportModalBtn(), 2500);
+      });
+  })
+  .catch(err => {
+    if (confirmBtn) { confirmBtn.textContent = '确认导入并更新趋势数据'; confirmBtn.disabled = false; }
+    alert('网络错误，请检查网络后重试：' + err.message);
   });
-
-  // Persist updated data to localStorage so it survives page refresh
-  persistData();
-
-  // Re-render everything
-  renderKPIs();
-  // Destroy and re-draw charts
-  Chart.getChart('chart-sales')?.destroy();
-  Chart.getChart('chart-category')?.destroy();
-  Chart.getChart('chart-price')?.destroy();
-  renderCharts();
-  renderTable();
-
-  // Show success
-  document.getElementById('import-main').style.display = 'none';
-  const success = document.getElementById('import-success');
-  document.getElementById('import-success-msg').textContent =
-    `成功更新 ${updatedCount} 个商品的销量趋势数据（${date}）`;
-  success.classList.add('show');
-
-  // Auto-close after 2.2s
-  setTimeout(() => closeImportModalBtn(), 2200);
 }
 
 // ── Favourites ────────────────────────────────────────────
