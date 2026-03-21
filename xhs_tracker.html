@@ -1307,7 +1307,6 @@ function enterApp(role) {
 }
 
 // ── Secret admin shortcut: press 'I' key 5 times quickly to open import ──
-let _iCount = 0, _iTimer = null;
 document.addEventListener('keydown', e => {
   if (currentRole !== 'admin') return;
   if (e.key === 'i' || e.key === 'I') {
@@ -1988,7 +1987,6 @@ function closeContactModal() {
 }
 
 // ── Import modal ────────────────────────────────────────────
-var pendingImportRows = [];   // parsed + matched rows, ready to commit
 
 function openImportModal() {
   document.getElementById('import-overlay').classList.add('open');
