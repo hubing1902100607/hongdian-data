@@ -2198,11 +2198,10 @@ function confirmImport() {
     store:    '',
   }));
 
-  fetch(WORKER_URL + '/api/import', {
+  fetch(WORKER_URL + '/api/import?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': ADMIN_PASSWORD,
     },
     body: JSON.stringify({ rows: rowsToSend }),
   })
