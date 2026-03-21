@@ -48,7 +48,7 @@
     inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
     pointer-events: none;
-    z-index: 9999;
+    z-membership: 9999;
     opacity: 0.5;
   }
 
@@ -63,7 +63,7 @@
     top: 0;
     background: rgba(10,10,15,0.92);
     backdrop-filter: blur(20px);
-    z-index: 100;
+    z-membership: 100;
   }
 
   .logo {
@@ -566,7 +566,7 @@
     inset: 0;
     background: rgba(0,0,0,0.7);
     backdrop-filter: blur(6px);
-    z-index: 200;
+    z-membership: 200;
     align-items: center;
     justify-content: center;
   }
@@ -807,7 +807,7 @@
 <body>
 
 <!-- Login Screen -->
-<div id="login-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9000; align-items:center; justify-content:center; flex-direction:column;">
+<div id="login-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-membership:9000; align-items:center; justify-content:center; flex-direction:column;">
   <div style="text-align:center; margin-bottom:28px;">
     <div style="width:56px;height:56px;background:var(--red);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 32px rgba(255,45,85,0.45);">🌸</div>
     <div style="font-size:22px;font-weight:500;letter-spacing:0.02em;">红点数据</div>
@@ -847,7 +847,7 @@
         购买/续费请关注公众号：<b style="color:var(--text2)">北苑笔谈</b>
       </div>
     </div>
-    <a href="index.html" target="_blank"
+    <a href="membership.html" target="_blank"
       style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-family:var(--font);text-decoration:none;transition:all .15s;"
       onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='var(--text)'"
       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
@@ -877,7 +877,7 @@
     <div id="expiry-badge" style="display:none;padding:6px 12px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
-    <a href="index.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
+    <a href="membership.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
     <button onclick="openContactModal()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">💬 联系</button>
   </div>
 </header>
@@ -1894,7 +1894,7 @@ function openModal(id) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: 'membership', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -1916,7 +1916,7 @@ function openModal(id) {
               return '  销量：' + item.raw.toLocaleString() + ' 件';
             },
             footer: items => {
-              const i = items[0].dataIndex;
+              const i = items[0].datamembership;
               if (i === 0) return '首次记录';
               const wow = wowChanges[i];
               const arrow = wow.diff >= 0 ? '↑' : '↓';
@@ -2103,7 +2103,7 @@ function parseCSV(text) {
   function findCol(key) {
     const names = aliases[key];
     for (const n of names) {
-      const idx = header.findIndex(h => h === n || h.toLowerCase() === n.toLowerCase());
+      const idx = header.findmembership(h => h === n || h.toLowerCase() === n.toLowerCase());
       if (idx !== -1) return idx;
     }
     return -1;
@@ -2258,7 +2258,7 @@ function isFav(id) { return loadFavs().includes(id); }
 function toggleFav(id, e) {
   e.stopPropagation();
   const favs = loadFavs();
-  const idx  = favs.indexOf(id);
+  const idx  = favs.membershipOf(id);
   if (idx === -1) favs.push(id); else favs.splice(idx, 1);
   saveFavs(favs);
   renderTable();
