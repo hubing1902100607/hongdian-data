@@ -1045,6 +1045,22 @@
 </div><!-- end app-root -->
 
 <script>
+// ═══════════════════════════════════════════════════════════
+//  全局状态变量集中声明区（防止 TDZ 报错）
+// ═══════════════════════════════════════════════════════════
+let currentRole         = null;    // 'admin' | 'user' | null
+let currentCat          = 'all';   // 当前筛选类目
+let currentPage         = 1;       // 当前页码
+let currentSort         = 'sales'; // 当前排序字段
+let searchQuery         = '';      // 当前搜索关键词
+let showFavOnly         = false;   // 是否只显示收藏
+let trendChartInstance  = null;    // 趋势图 Chart 实例
+let pendingImportRows   = [];      // 待确认导入的数据行
+let _iCount             = 0;       // 管理员快捷键计数
+let _iTimer             = null;    // 管理员快捷键计时器
+// ═══════════════════════════════════════════════════════════
+
+
 // ══════════════════════════════════════════════════════════
 //  AUTH CONFIG — 只需修改这里
 // ══════════════════════════════════════════════════════════
@@ -1053,9 +1069,6 @@ const HMAC_SECRET    = 'hd_bynb_2025_secret_key'; // 与生成器保持一致，
 // ══════════════════════════════════════════════════════════
 
 const SESSION_KEY = 'hd_session';
-let currentRole   = null;
-
-// ── 产品信息码（设备指纹） ────────────────────────────────
 function getFingerprint() {
   const raw = [
     navigator.userAgent,
@@ -1491,10 +1504,6 @@ const CAT_STYLES = {
 };
 
 const PAGE_SIZE = 10;
-let currentPage = 1;
-let currentSort = 'sales';
-let currentCat = 'all';
-let searchQuery = '';
 
 function fmt(n) {
   if (n >= 10000) return (n/10000).toFixed(1) + 'w';
@@ -1777,7 +1786,6 @@ function openLink(url) {
   window.open(url, '_blank');
 }
 
-let trendChartInstance = null;
 
 function openModal(id) {
   const item = RAW_DATA.find(d => d.id === id);
@@ -2238,7 +2246,6 @@ function confirmImport() {
 
 // ── Favourites ────────────────────────────────────────────
 const FAV_KEY = 'hd_favourites';
-let showFavOnly = false;
 
 function loadFavs() {
   try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; }
