@@ -1316,56 +1316,7 @@ function handleLogout() {
   document.getElementById('login-input').value = '';
 }
 
-// ── Boot ──────────────────────────────────────────────────
-const DATA_KEY = 'hd_raw_data';
 
-function loadPersistedData() {
-  try {
-    const saved = localStorage.getItem(DATA_KEY);
-    if (!saved) return;
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed) || !parsed.length) return;
-    parsed.forEach(s => {
-      const item = RAW_DATA.find(d => d.id === s.id);
-      if (item) Object.assign(item, s);
-    });
-  } catch(e) { console.error('load persist fail', e); }
-}
-
-function persistData() {
-  try { localStorage.setItem(DATA_KEY, JSON.stringify(RAW_DATA)); }
-  catch(e) { console.error('persist fail', e); }
-}
-
-(function boot() {
-  const el = document.getElementById('product-code-display');
-  if (el) el.textContent = formatProductCode(DEVICE_FP);
-
-  const session = loadSession();
-  if (isSessionValid(session)) {
-    // 有有效会话，直接用本地数据先显示，然后后台拉最新数据
-    loadPersistedData();
-    enterApp(session.role);
-    // 后台静默更新
-    const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
-    fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth))
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok && data.products && data.products.length) {
-        RAW_DATA.length = 0;
-        data.products.forEach(p => RAW_DATA.push(p));
-        persistData();
-        renderKPIs(); renderCharts(); renderCatFilters(); renderTable();
-        updateFavBtn();
-      }
-    })
-    .catch(() => {});
-  } else {
-    clearSession();
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app-root').style.display = 'none';
-  }
-})();
 
 const RAW_DATA = [
   { id:1, category:"食品水果类", name:"每 油辣椒少油 很辣很香，三种辣度。好吃好吃，一定要尝一尝 一瓶 微辣", sales:15000, addCart:1000, buy24h:100, price:18.9, link:"https://xhslink.com/m/8NdYTv4xmds", store:"小红薯6977AE83的店", fans:104, commission:0, salesHistory:[{date:"2026-03-15",sales:15000}] },
@@ -1465,6 +1416,57 @@ const RAW_DATA = [
   { id:95, category:"食品水果类", name:"加酸版酸梅粒无核厚切酸梅条桃梅肉蜜饯果脯酸爽零食 芒果话梅粒 1包100g", sales:259000, addCart:300, buy24h:100, price:9.9, link:"https://xhslink.com/m/9TLzCWpVq1x", store:"小爱糯叽叽果脯的店", fans:4873, commission:0, salesHistory:[{date:"2026-03-18",sales:259000}] },
   { id:96, category:"食品水果类", name:"酸酸酸 农家无添加不加糖无核酸杏条 出行解馋春游零食 红杏条尝鲜装90克", sales:204000, addCart:200, buy24h:100, price:9.9, link:"https://xhslink.com/m/2ZHKd548A4D", store:"圆脸二姐的店", fans:29000, commission:0, salesHistory:[{date:"2026-03-18",sales:204000}] }
 ];
+
+// ── Boot ──────────────────────────────────────────────────
+const DATA_KEY = 'hd_raw_data';
+
+function loadPersistedData() {
+  try {
+    const saved = localStorage.getItem(DATA_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed) || !parsed.length) return;
+    parsed.forEach(s => {
+      const item = RAW_DATA.find(d => d.id === s.id);
+      if (item) Object.assign(item, s);
+    });
+  } catch(e) { console.error('load persist fail', e); }
+}
+
+function persistData() {
+  try { localStorage.setItem(DATA_KEY, JSON.stringify(RAW_DATA)); }
+  catch(e) { console.error('persist fail', e); }
+}
+
+(function boot() {
+  const el = document.getElementById('product-code-display');
+  if (el) el.textContent = formatProductCode(DEVICE_FP);
+
+  const session = loadSession();
+  if (isSessionValid(session)) {
+    // 有有效会话，直接用本地数据先显示，然后后台拉最新数据
+    loadPersistedData();
+    enterApp(session.role);
+    // 后台静默更新
+    const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
+    fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth))
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && data.products && data.products.length) {
+        RAW_DATA.length = 0;
+        data.products.forEach(p => RAW_DATA.push(p));
+        persistData();
+        renderKPIs(); renderCharts(); renderCatFilters(); renderTable();
+        updateFavBtn();
+      }
+    })
+    .catch(() => {});
+  } else {
+    clearSession();
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-root').style.display = 'none';
+  }
+})();
 
 const CAT_STYLES = {
   "食品水果类": "cat-food",
