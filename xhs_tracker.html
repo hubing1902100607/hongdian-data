@@ -1456,7 +1456,11 @@ function persistData() {
         RAW_DATA.length = 0;
         data.products.forEach(p => RAW_DATA.push(p));
         persistData();
-        renderKPIs(); renderCharts(); renderCatFilters(); renderTable();
+        renderKPIs();
+        Chart.getChart('chart-sales')?.destroy();
+        Chart.getChart('chart-category')?.destroy();
+        Chart.getChart('chart-price')?.destroy();
+        renderCharts(); renderCatFilters(); renderTable();
         updateFavBtn();
       }
     })
@@ -1976,7 +1980,7 @@ function closeContactModal() {
 }
 
 // ── Import modal ────────────────────────────────────────────
-let pendingImportRows = [];   // parsed + matched rows, ready to commit
+var pendingImportRows = [];   // parsed + matched rows, ready to commit
 
 function openImportModal() {
   document.getElementById('import-overlay').classList.add('open');
