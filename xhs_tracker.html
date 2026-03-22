@@ -886,6 +886,9 @@
     <div id="expiry-badge" style="display:none;padding:6px 12px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
+    <span id="monitor-btn-wrap" style="display:none;">
+      <button onclick="openMonitorModal()" style="padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">📡 我的监控</button>
+    </span>
     <a href="membership.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
     <button onclick="openContactModal()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">💬 联系</button>
   </div>
@@ -1011,7 +1014,42 @@
     <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">选品咨询 · 数据定制 · 功能建议</div>
   </div>
 </div>
-<div class="modal-overlay" id="import-overlay" onclick="closeImportModal(event)">
+<!-- Monitor Modal -->
+<div class="modal-overlay" id="monitor-overlay" onclick="if(event.target===this)closeMonitorModal()" style="display:none;">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" onclick="closeMonitorModal()">✕</button>
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px;">📡 我的监控</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7;">
+      提交你想监控的小红书商品链接，我会在下次数据更新时加入抓取列表，更新后可在此查看数据。
+    </div>
+
+    <!-- 额度显示 -->
+    <div id="monitor-quota" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text2);">
+      <span>监控额度：</span>
+      <span id="monitor-quota-text" style="font-family:var(--mono);color:var(--teal)">加载中…</span>
+    </div>
+
+    <!-- 提交表单 -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <input id="monitor-link-input" type="text" placeholder="粘贴小红书商品链接，如 https://xhslink.com/m/xxx"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+        onfocus="this.style.borderColor='var(--border-bright)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')submitMonitor()">
+      <button onclick="submitMonitor()" id="monitor-submit-btn"
+        style="padding:10px 16px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;"
+        onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
+        提交监控
+      </button>
+    </div>
+    <div id="monitor-msg" style="font-size:12px;margin-bottom:16px;display:none;padding:8px 12px;border-radius:6px;"></div>
+
+    <!-- 已提交列表 -->
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">已提交的监控商品</div>
+    <div id="monitor-list" style="font-size:12px;color:var(--text2);">加载中…</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="import-overlay"  onclick="closeImportModal(event)">
   <div class="modal" id="import-modal" style="max-width:560px">
     <button class="modal-close" onclick="closeImportModalBtn()">✕</button>
 
@@ -1303,7 +1341,8 @@ function enterApp(role) {
   currentRole = role;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
-  document.getElementById('import-btn-wrap').style.display = role === 'admin' ? '' : 'none';
+  document.getElementById('import-btn-wrap').style.display  = role === 'admin' ? '' : 'none';
+  document.getElementById('monitor-btn-wrap').style.display = role === 'user'  ? '' : 'none';
   document.getElementById('trial-badge').style.display = 'none';
 
   // Show expiry badge for regular users
@@ -2032,6 +2071,101 @@ function exportToExcel() {
   URL.revokeObjectURL(url);
 }
 // ── End Export ───────────────────────────────────────────
+
+// ── Monitor ──────────────────────────────────────────────
+function openMonitorModal() {
+  document.getElementById('monitor-overlay').style.display = 'flex';
+  loadMonitorList();
+}
+
+function closeMonitorModal() {
+  document.getElementById('monitor-overlay').style.display = 'none';
+}
+
+function showMonitorMsg(text, ok) {
+  const el = document.getElementById('monitor-msg');
+  el.style.display = 'block';
+  el.textContent = text;
+  el.style.background = ok ? 'var(--teal-dim)' : 'var(--red-dim)';
+  el.style.color = ok ? 'var(--teal)' : 'var(--red)';
+  el.style.border = ok ? '1px solid rgba(0,201,167,0.3)' : '1px solid rgba(255,45,85,0.3)';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+async function loadMonitorList() {
+  const session = loadSession();
+  if (!session) return;
+  const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
+  try {
+    const res  = await fetch(WORKER_URL + '/api/my-monitor?auth=' + encodeURIComponent(auth) + '&fp=' + encodeURIComponent(DEVICE_FP));
+    const data = await res.json();
+    if (!data.ok) return;
+
+    // 额度
+    document.getElementById('monitor-quota-text').textContent =
+      data.used + ' / ' + data.limit + ' 个';
+
+    // 列表
+    const listEl = document.getElementById('monitor-list');
+    const all = [...(data.myProducts || []), ...(data.monList || []).filter(m => !data.myProducts?.find(p => p.link === m.link))];
+
+    if (!all.length) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">暂无监控商品，提交链接后我会在下次更新时加入</div>';
+      return;
+    }
+
+    listEl.innerHTML = all.map(item => {
+      const hasData = item.sales != null;
+      const name    = item.name || item.link.slice(0, 40) + '…';
+      const status  = hasData
+        ? '<span style="color:var(--teal);font-family:var(--mono);font-size:11px;">● 已有数据</span>'
+        : '<span style="color:var(--text3);font-family:var(--mono);font-size:11px;">○ 待更新</span>';
+      const salesInfo = hasData
+        ? '<span style="font-family:var(--mono);font-size:12px;color:var(--red)">销量 ' + item.sales.toLocaleString() + '</span>'
+        : '<span style="font-size:11px;color:var(--text3)">提交于 ' + (item.submittedAt || '') + '</span>';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">' +
+        '<div style="flex:1;overflow:hidden;margin-right:12px;">' +
+          '<div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(name) + '</div>' +
+          '<div style="margin-top:3px;">' + salesInfo + '</div>' +
+        '</div>' +
+        '<div>' + status + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('monitor-list').textContent = '加载失败，请检查网络';
+  }
+}
+
+async function submitMonitor() {
+  const link = document.getElementById('monitor-link-input').value.trim();
+  if (!link) { showMonitorMsg('请输入商品链接', false); return; }
+  if (!link.includes('xhslink.com') && !link.includes('xiaohongshu.com')) {
+    showMonitorMsg('请输入有效的小红书商品链接', false); return;
+  }
+  const session = loadSession();
+  if (!session) return;
+  const btn = document.getElementById('monitor-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '提交中…';
+  try {
+    const res  = await fetch(WORKER_URL + '/api/submit-monitor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: session.code || ADMIN_PASSWORD, fp: DEVICE_FP, link }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showMonitorMsg(data.error, false); return; }
+    showMonitorMsg('✓ 提交成功！下次数据更新时会加入监控', true);
+    document.getElementById('monitor-link-input').value = '';
+    loadMonitorList();
+  } catch(e) {
+    showMonitorMsg('网络错误，请重试', false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '提交监控';
+  }
+}
+// ── End Monitor ───────────────────────────────────────────
 
 function openContactModal() {
   document.getElementById('contact-overlay').style.display = 'flex';
