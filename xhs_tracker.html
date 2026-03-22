@@ -498,6 +498,15 @@
     border-color: var(--border-bright);
     color: var(--text);
   }
+  .del-btn {
+    color: var(--red) !important;
+    border-color: rgba(255,45,85,0.3) !important;
+    margin-left: 6px;
+  }
+  .del-btn:hover {
+    background: var(--red-dim) !important;
+    border-color: rgba(255,45,85,0.6) !important;
+  }
 
   /* Hot tag */
   .hot-tag {
@@ -1758,7 +1767,7 @@ function renderTable() {
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
         <td style="white-space:nowrap">
           <button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button>
-          ${currentRole === 'admin' ? `<button class="link-btn" style="margin-left:6px;color:#ff2d55;border-color:rgba(255,45,85,0.3)" onclick="event.stopPropagation();deleteProduct(${item.id},'${item.name.replace(/'/g,\'').slice(0,20)}')">🗑️</button>` : ''}
+          ${currentRole === 'admin' ? '<button class="link-btn del-btn" onclick="event.stopPropagation();deleteProduct(' + item.id + ')">🗑️</button>' : ''}
         </td>
       </tr>
     `;
@@ -2295,8 +2304,10 @@ function updateFavBtn() {
 // ── End Favourites ────────────────────────────────────────
 
 // ── Delete Product ────────────────────────────────────────
-function deleteProduct(id, name) {
-  if (!confirm(`确认删除商品：「${name}…」？\n\n此操作会同步从服务器移除，无法撤销。`)) return;
+function deleteProduct(id) {
+  const item = RAW_DATA.find(d => d.id === id);
+  const name = item ? item.name.slice(0, 20) : id;
+  if (!confirm('确认删除商品：「' + name + '…」？\n\n此操作会同步从服务器移除，无法撤销。')) return;
 
   fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
     method: 'POST',
