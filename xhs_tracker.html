@@ -1061,6 +1061,7 @@ let currentRole         = null;    // 'admin' | 'user' | null
 let currentCat          = 'all';   // 当前筛选类目
 let currentPage         = 1;       // 当前页码
 let currentSort         = 'sales'; // 当前排序字段
+let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let trendChartInstance  = null;    // 趋势图 Chart 实例
@@ -1518,6 +1519,16 @@ function persistData() {
 
 
 
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function fmt(n) {
   if (n >= 10000) return (n/10000).toFixed(1) + 'w';
   if (n >= 1000) return (n/1000).toFixed(1) + 'k';
@@ -1665,7 +1676,7 @@ function renderCatFilters() {
   const wrap = document.getElementById('cat-filters');
   wrap.innerHTML = cats.map(c => `
     <button class="filter-btn ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}')">
-      ${c === 'all' ? '全部' : c.replace('类','')}
+      ${c === 'all' ? '全部' : (c === '美妆类目' || c === '美妆目') ? '美妆' : c}
     </button>
   `).join('');
 }
@@ -1678,9 +1689,27 @@ function setCat(cat) {
 }
 
 function setSortAndFilter(col) {
-  currentSort = col;
+  if (currentSort === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortDir = 'desc';
+    currentSort = col;
+  }
   document.getElementById('sort-select').value = col;
-  filterAndRender();
+  ['sales','addCart','buy24h','price','fans','revenue'].forEach(k => {
+    const th = document.getElementById('th-' + k);
+    if (!th) return;
+    const labels = {sales:'商品销量',addCart:'24h加购',buy24h:'24h购买',price:'价格',fans:'店铺粉丝',revenue:'预估GMV'};
+    if (k === col) {
+      th.classList.add('sorted');
+      th.textContent = labels[k] + (sortDir === 'desc' ? ' ↓' : ' ↑');
+    } else {
+      th.classList.remove('sorted');
+      th.textContent = labels[k] + ' ↕';
+    }
+  });
+  currentPage = 1;
+  renderTable();
 }
 
 function getFiltered() {
@@ -1689,12 +1718,17 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   const sort = document.getElementById('sort-select').value;
-  if (sort === 'sales') data.sort((a,b) => b.sales - a.sales);
-  else if (sort === 'addCart') data.sort((a,b) => b.addCart - a.addCart);
-  else if (sort === 'buy24h') data.sort((a,b) => (b.buy24h||0) - (a.buy24h||0));
-  else if (sort === 'price') data.sort((a,b) => b.price - a.price);
-  else if (sort === 'revenue') data.sort((a,b) => estimateRevenue(b) - estimateRevenue(a));
-  else if (sort === 'fans') data.sort((a,b) => b.fans - a.fans);
+  const d = sortDir === 'desc' ? -1 : 1;
+  const normFans = item => {
+    const f = item.fans;
+    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
+  };
+  if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
+  else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
+  else if (sort === 'buy24h') data.sort((a,b) => d * ((b.buy24h||0) - (a.buy24h||0)));
+  else if (sort === 'price') data.sort((a,b) => d * (b.price - a.price));
+  else if (sort === 'revenue') data.sort((a,b) => d * (estimateRevenue(b) - estimateRevenue(a)));
+  else if (sort === 'fans') data.sort((a,b) => d * (normFans(b) - normFans(a)));
   return data;
 }
 
@@ -1747,11 +1781,11 @@ function renderTable() {
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
         <td><button class="fav-btn ${fav ? 'active' : ''}" onclick="toggleFav(${item.id}, event)" title="${fav ? '取消收藏' : '加入收藏'}">${fav ? '★' : '☆'}</button></td>
         <td><div class="rank-badge ${rankClass}">${rank}</div></td>
-        <td><span class="category-tag ${catClass}">${item.category.replace('类','')}</span></td>
+        <td><span class="category-tag ${catClass}">${(item.category === '美妆类目' || item.category === '美妆目') ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
-            <div class="product-name">${item.name}${signalTag}</div>
-            <div class="store-name">${item.store}</div>
+            <div class="product-name">${escHtml(item.name)}${signalTag}</div>
+            <div class="store-name">${escHtml(item.store)}</div>
           </div>
         </td>
         <td>
@@ -1812,10 +1846,13 @@ function openModal(id) {
 
   // Calculate week-over-week growth (last vs second-to-last in history)
   const hist = item.salesHistory;
-  const lastDiff = hist[hist.length-1].sales - hist[hist.length-2].sales;
-  const growthPct = ((lastDiff / hist[hist.length-2].sales) * 100).toFixed(1);
-  const growthClass = lastDiff >= 0 ? 'up' : 'down';
-  const growthText = lastDiff >= 0 ? `↑ +${growthPct}%` : `↓ ${growthPct}%`;
+  let growthClass = 'up', growthText = '数据积累中';
+  if (hist && hist.length >= 2) {
+    const lastDiff = hist[hist.length-1].sales - hist[hist.length-2].sales;
+    const growthPct = ((lastDiff / hist[hist.length-2].sales) * 100).toFixed(1);
+    growthClass = lastDiff >= 0 ? 'up' : 'down';
+    growthText = lastDiff >= 0 ? `↑ +${growthPct}%` : `↓ ${growthPct}%`;
+  }
 
   // Build the direct product link - xhslink.com/m/ links are short links
   // We display them and open them directly
