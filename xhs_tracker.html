@@ -48,7 +48,7 @@
     inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
     pointer-events: none;
-    z-membership: 9999;
+    z-index: 9999;
     opacity: 0.5;
   }
 
@@ -63,7 +63,7 @@
     top: 0;
     background: rgba(10,10,15,0.92);
     backdrop-filter: blur(20px);
-    z-membership: 100;
+    z-index: 100;
   }
 
   .logo {
@@ -566,7 +566,7 @@
     inset: 0;
     background: rgba(0,0,0,0.7);
     backdrop-filter: blur(6px);
-    z-membership: 200;
+    z-index: 200;
     align-items: center;
     justify-content: center;
   }
@@ -807,7 +807,7 @@
 <body>
 
 <!-- Login Screen -->
-<div id="login-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-membership:9000; align-items:center; justify-content:center; flex-direction:column;">
+<div id="login-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9000; align-items:center; justify-content:center; flex-direction:column;">
   <div style="text-align:center; margin-bottom:28px;">
     <div style="width:56px;height:56px;background:var(--red);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 32px rgba(255,45,85,0.45);">🌸</div>
     <div style="font-size:22px;font-weight:500;letter-spacing:0.02em;">红点数据</div>
@@ -1656,7 +1656,7 @@ function renderCatFilters() {
   const wrap = document.getElementById('cat-filters');
   wrap.innerHTML = cats.map(c => `
     <button class="filter-btn ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}')">
-      ${c === 'all' ? '全部' : c.replace('类','')}
+      ${c === 'all' ? '全部' : c.replace(/类$/, '')}
     </button>
   `).join('');
 }
@@ -1669,9 +1669,19 @@ function setCat(cat) {
 }
 
 function setSortAndFilter(col) {
+  const select = document.getElementById('sort-select');
+  // Toggle descending if clicking the same column twice
+  if (select.value === col) {
+    // Already sorted by this col — do nothing extra, just re-render (already desc)
+  }
+  select.value = col;
   currentSort = col;
-  document.getElementById('sort-select').value = col;
-  filterAndRender();
+  // Update th highlight
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const thEl = document.getElementById('th-' + col);
+  if (thEl) thEl.classList.add('sorted');
+  currentPage = 1;
+  renderTable();
 }
 
 function getFiltered() {
@@ -1685,7 +1695,11 @@ function getFiltered() {
   else if (sort === 'buy24h') data.sort((a,b) => (b.buy24h||0) - (a.buy24h||0));
   else if (sort === 'price') data.sort((a,b) => b.price - a.price);
   else if (sort === 'revenue') data.sort((a,b) => estimateRevenue(b) - estimateRevenue(a));
-  else if (sort === 'fans') data.sort((a,b) => b.fans - a.fans);
+  else if (sort === 'fans') data.sort((a,b) => {
+    const fa = typeof a.fans === 'number' && a.fans < 10 ? a.fans * 10000 : Number(a.fans) || 0;
+    const fb = typeof b.fans === 'number' && b.fans < 10 ? b.fans * 10000 : Number(b.fans) || 0;
+    return fb - fa;
+  });
   return data;
 }
 
@@ -1738,7 +1752,7 @@ function renderTable() {
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
         <td><button class="fav-btn ${fav ? 'active' : ''}" onclick="toggleFav(${item.id}, event)" title="${fav ? '取消收藏' : '加入收藏'}">${fav ? '★' : '☆'}</button></td>
         <td><div class="rank-badge ${rankClass}">${rank}</div></td>
-        <td><span class="category-tag ${catClass}">${item.category.replace('类','')}</span></td>
+        <td><span class="category-tag ${catClass}">${item.category.replace(/类$/, '')}</span></td>
         <td>
           <div class="product-name-wrap">
             <div class="product-name">${item.name}${signalTag}</div>
@@ -1894,7 +1908,7 @@ function openModal(id) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'membership', intersect: false },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -1916,7 +1930,7 @@ function openModal(id) {
               return '  销量：' + item.raw.toLocaleString() + ' 件';
             },
             footer: items => {
-              const i = items[0].datamembership;
+              const i = items[0].dataIndex;
               if (i === 0) return '首次记录';
               const wow = wowChanges[i];
               const arrow = wow.diff >= 0 ? '↑' : '↓';
@@ -2103,7 +2117,7 @@ function parseCSV(text) {
   function findCol(key) {
     const names = aliases[key];
     for (const n of names) {
-      const idx = header.findmembership(h => h === n || h.toLowerCase() === n.toLowerCase());
+      const idx = header.findIndex(h => h === n || h.toLowerCase() === n.toLowerCase());
       if (idx !== -1) return idx;
     }
     return -1;
@@ -2258,7 +2272,7 @@ function isFav(id) { return loadFavs().includes(id); }
 function toggleFav(id, e) {
   e.stopPropagation();
   const favs = loadFavs();
-  const idx  = favs.membershipOf(id);
+  const idx  = favs.indexOf(id);
   if (idx === -1) favs.push(id); else favs.splice(idx, 1);
   saveFavs(favs);
   renderTable();
