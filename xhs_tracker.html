@@ -1052,6 +1052,7 @@ let currentRole         = null;    // 'admin' | 'user' | null
 let currentCat          = 'all';   // 当前筛选类目
 let currentPage         = 1;       // 当前页码
 let currentSort         = 'sales'; // 当前排序字段
+let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let trendChartInstance  = null;    // 趋势图 Chart 实例
@@ -1656,7 +1657,7 @@ function renderCatFilters() {
   const wrap = document.getElementById('cat-filters');
   wrap.innerHTML = cats.map(c => `
     <button class="filter-btn ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}')">
-      ${c === 'all' ? '全部' : c.replace(/类$/, '')}
+      ${c === 'all' ? '全部' : c === '美妆类目' ? '美妆' : c}
     </button>
   `).join('');
 }
@@ -1669,17 +1670,27 @@ function setCat(cat) {
 }
 
 function setSortAndFilter(col) {
-  const select = document.getElementById('sort-select');
-  // Toggle descending if clicking the same column twice
-  if (select.value === col) {
-    // Already sorted by this col — do nothing extra, just re-render (already desc)
+  // 同一列再点一次 → 切换升/降序；换列 → 默认降序
+  if (currentSort === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortDir = 'desc';
+    currentSort = col;
   }
-  select.value = col;
-  currentSort = col;
-  // Update th highlight
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
-  const thEl = document.getElementById('th-' + col);
-  if (thEl) thEl.classList.add('sorted');
+  document.getElementById('sort-select').value = col;
+  // 更新表头箭头高亮
+  ['sales','addCart','buy24h','price','fans','revenue'].forEach(k => {
+    const th = document.getElementById('th-' + k);
+    if (!th) return;
+    const labels = {sales:'商品销量',addCart:'24h加购',buy24h:'24h购买',price:'价格',fans:'店铺粉丝',revenue:'预估GMV'};
+    if (k === col) {
+      th.classList.add('sorted');
+      th.textContent = labels[k] + (sortDir === 'desc' ? ' ↓' : ' ↑');
+    } else {
+      th.classList.remove('sorted');
+      th.textContent = labels[k] + ' ↕';
+    }
+  });
   currentPage = 1;
   renderTable();
 }
@@ -1690,16 +1701,17 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   const sort = document.getElementById('sort-select').value;
-  if (sort === 'sales') data.sort((a,b) => b.sales - a.sales);
-  else if (sort === 'addCart') data.sort((a,b) => b.addCart - a.addCart);
-  else if (sort === 'buy24h') data.sort((a,b) => (b.buy24h||0) - (a.buy24h||0));
-  else if (sort === 'price') data.sort((a,b) => b.price - a.price);
-  else if (sort === 'revenue') data.sort((a,b) => estimateRevenue(b) - estimateRevenue(a));
-  else if (sort === 'fans') data.sort((a,b) => {
-    const fa = typeof a.fans === 'number' && a.fans < 10 ? a.fans * 10000 : Number(a.fans) || 0;
-    const fb = typeof b.fans === 'number' && b.fans < 10 ? b.fans * 10000 : Number(b.fans) || 0;
-    return fb - fa;
-  });
+  const d = sortDir === 'desc' ? -1 : 1;
+  const normFans = item => {
+    const f = item.fans;
+    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
+  };
+  if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
+  else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
+  else if (sort === 'buy24h') data.sort((a,b) => d * ((b.buy24h||0) - (a.buy24h||0)));
+  else if (sort === 'price') data.sort((a,b) => d * (b.price - a.price));
+  else if (sort === 'revenue') data.sort((a,b) => d * (estimateRevenue(b) - estimateRevenue(a)));
+  else if (sort === 'fans') data.sort((a,b) => d * (normFans(b) - normFans(a)));
   return data;
 }
 
@@ -1752,7 +1764,7 @@ function renderTable() {
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
         <td><button class="fav-btn ${fav ? 'active' : ''}" onclick="toggleFav(${item.id}, event)" title="${fav ? '取消收藏' : '加入收藏'}">${fav ? '★' : '☆'}</button></td>
         <td><div class="rank-badge ${rankClass}">${rank}</div></td>
-        <td><span class="category-tag ${catClass}">${item.category.replace(/类$/, '')}</span></td>
+        <td><span class="category-tag ${catClass}">${item.category === '美妆类目' ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
             <div class="product-name">${item.name}${signalTag}</div>
