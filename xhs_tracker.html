@@ -1052,7 +1052,6 @@ let currentRole         = null;    // 'admin' | 'user' | null
 let currentCat          = 'all';   // 当前筛选类目
 let currentPage         = 1;       // 当前页码
 let currentSort         = 'sales'; // 当前排序字段
-let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let trendChartInstance  = null;    // 趋势图 Chart 实例
@@ -1657,7 +1656,7 @@ function renderCatFilters() {
   const wrap = document.getElementById('cat-filters');
   wrap.innerHTML = cats.map(c => `
     <button class="filter-btn ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}')">
-      ${c === 'all' ? '全部' : c === '美妆类目' ? '美妆' : c}
+      ${c === 'all' ? '全部' : c.replace('类','')}
     </button>
   `).join('');
 }
@@ -1670,29 +1669,9 @@ function setCat(cat) {
 }
 
 function setSortAndFilter(col) {
-  // 同一列再点一次 → 切换升/降序；换列 → 默认降序
-  if (currentSort === col) {
-    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
-  } else {
-    sortDir = 'desc';
-    currentSort = col;
-  }
+  currentSort = col;
   document.getElementById('sort-select').value = col;
-  // 更新表头箭头高亮
-  ['sales','addCart','buy24h','price','fans','revenue'].forEach(k => {
-    const th = document.getElementById('th-' + k);
-    if (!th) return;
-    const labels = {sales:'商品销量',addCart:'24h加购',buy24h:'24h购买',price:'价格',fans:'店铺粉丝',revenue:'预估GMV'};
-    if (k === col) {
-      th.classList.add('sorted');
-      th.textContent = labels[k] + (sortDir === 'desc' ? ' ↓' : ' ↑');
-    } else {
-      th.classList.remove('sorted');
-      th.textContent = labels[k] + ' ↕';
-    }
-  });
-  currentPage = 1;
-  renderTable();
+  filterAndRender();
 }
 
 function getFiltered() {
@@ -1701,17 +1680,12 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   const sort = document.getElementById('sort-select').value;
-  const d = sortDir === 'desc' ? -1 : 1;
-  const normFans = item => {
-    const f = item.fans;
-    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
-  };
-  if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
-  else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
-  else if (sort === 'buy24h') data.sort((a,b) => d * ((b.buy24h||0) - (a.buy24h||0)));
-  else if (sort === 'price') data.sort((a,b) => d * (b.price - a.price));
-  else if (sort === 'revenue') data.sort((a,b) => d * (estimateRevenue(b) - estimateRevenue(a)));
-  else if (sort === 'fans') data.sort((a,b) => d * (normFans(b) - normFans(a)));
+  if (sort === 'sales') data.sort((a,b) => b.sales - a.sales);
+  else if (sort === 'addCart') data.sort((a,b) => b.addCart - a.addCart);
+  else if (sort === 'buy24h') data.sort((a,b) => (b.buy24h||0) - (a.buy24h||0));
+  else if (sort === 'price') data.sort((a,b) => b.price - a.price);
+  else if (sort === 'revenue') data.sort((a,b) => estimateRevenue(b) - estimateRevenue(a));
+  else if (sort === 'fans') data.sort((a,b) => b.fans - a.fans);
   return data;
 }
 
@@ -1764,7 +1738,7 @@ function renderTable() {
       <tr style="cursor:pointer" onclick="openModal(${item.id})">
         <td><button class="fav-btn ${fav ? 'active' : ''}" onclick="toggleFav(${item.id}, event)" title="${fav ? '取消收藏' : '加入收藏'}">${fav ? '★' : '☆'}</button></td>
         <td><div class="rank-badge ${rankClass}">${rank}</div></td>
-        <td><span class="category-tag ${catClass}">${item.category === '美妆类目' ? '美妆' : item.category}</span></td>
+        <td><span class="category-tag ${catClass}">${item.category.replace('类','')}</span></td>
         <td>
           <div class="product-name-wrap">
             <div class="product-name">${item.name}${signalTag}</div>
@@ -1782,7 +1756,10 @@ function renderTable() {
         <td><span class="price-num">¥${item.price.toFixed(2)}</span></td>
         <td><span class="fans-num">${typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString()}</span></td>
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
-        <td><button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button></td>
+        <td style="white-space:nowrap">
+          <button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button>
+          ${currentRole === 'admin' ? `<button class="link-btn" style="margin-left:6px;color:#ff2d55;border-color:rgba(255,45,85,0.3)" onclick="event.stopPropagation();deleteProduct(${item.id},'${item.name.replace(/'/g,\'').slice(0,20)}')">🗑️</button>` : ''}
+        </td>
       </tr>
     `;
   }).join('');
@@ -2316,6 +2293,33 @@ function updateFavBtn() {
   }
 }
 // ── End Favourites ────────────────────────────────────────
+
+// ── Delete Product ────────────────────────────────────────
+function deleteProduct(id, name) {
+  if (!confirm(`确认删除商品：「${name}…」？\n\n此操作会同步从服务器移除，无法撤销。`)) return;
+
+  fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.ok) { alert('删除失败：' + data.error); return; }
+    // 本地同步移除
+    const idx = RAW_DATA.findIndex(d => d.id === id);
+    if (idx !== -1) RAW_DATA.splice(idx, 1);
+    renderKPIs();
+    Chart.getChart('chart-sales')?.destroy();
+    Chart.getChart('chart-category')?.destroy();
+    Chart.getChart('chart-price')?.destroy();
+    renderCharts();
+    renderCatFilters();
+    renderTable();
+  })
+  .catch(err => alert('网络错误：' + err.message));
+}
+// ── End Delete Product ────────────────────────────────────
 function exportExcel() {
   const filtered = getFiltered();
   const maxSales = Math.max(...RAW_DATA.map(d => d.sales));
