@@ -1607,8 +1607,9 @@ function fmt(n) {
 }
 
 function fmtY(n) {
-  if (n >= 10000) return '¥' + (n/10000).toFixed(0) + 'w';
-  return '¥' + n.toFixed(0);
+  if (n >= 100000) return (n/10000).toFixed(2) + 'W';
+  if (n >= 10000)  return (n/10000).toFixed(2) + 'W';
+  return n.toFixed(0);
 }
 
 function estimateRevenue(item) {
