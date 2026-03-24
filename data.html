@@ -889,6 +889,9 @@
     <span id="monitor-btn-wrap" style="display:none;">
       <button onclick="openMonitorModal()" style="padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">📡 我的监控</button>
     </span>
+    <span id="score-btn-wrap" style="display:none;">
+      <button onclick="openScoreModal()" style="padding:6px 12px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;color:var(--gold);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(255,214,10,0.22)'" onmouseout="this.style.background='rgba(255,214,10,0.12)'">⭐ 选品评分</button>
+    </span>
     <a href="index.html" target="_blank" style="padding:6px 12px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;text-decoration:none;">会员中心</a>
     <button onclick="openContactModal()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">💬 联系</button>
   </div>
@@ -1343,6 +1346,7 @@ function enterApp(role) {
   document.getElementById('app-root').style.display = 'block';
   document.getElementById('import-btn-wrap').style.display  = role === 'admin' ? '' : 'none';
   document.getElementById('monitor-btn-wrap').style.display = role === 'user'  ? '' : 'none';
+  document.getElementById('score-btn-wrap').style.display   = '';
   document.getElementById('trial-badge').style.display = 'none';
 
   // Show expiry badge for regular users
@@ -2546,7 +2550,247 @@ function exportExcel() {
 }
 // ── End Export ────────────────────────────────────────────
 
+// ── 选品评分系统 ──────────────────────────────────────────
+const SCORE_KEY = 'hd_scores';
+
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem(SCORE_KEY) || '[]'); } catch { return []; }
+}
+function saveScores(arr) {
+  localStorage.setItem(SCORE_KEY, JSON.stringify(arr));
+}
+
+function calcScore(d) {
+  let total = 0;
+  // 竞争维度 4分
+  // 竞品笔记数权重 <300篇 1.5分
+  const notes = parseFloat(d.comp_notes) || 0;
+  total += notes < 300 ? 1.5 : notes < 1000 ? 0.8 : 0;
+  // 竞品日更笔记数 <5篇 1.5分
+  const daily = parseFloat(d.comp_daily) || 0;
+  total += daily < 5 ? 1.5 : daily < 15 ? 0.8 : 0;
+  // 竞品链接权重 <1万 0.8分
+  const linkSales = parseFloat(d.comp_link_sales) || 0;
+  total += linkSales < 10000 ? 0.8 : linkSales < 30000 ? 0.4 : 0;
+  // 竞品粉丝权重 <1000 0.2分
+  const fans = parseFloat(d.comp_fans) || 0;
+  total += fans < 1000 ? 0.2 : 0;
+  // 市场维度 2分
+  // 起号时间 >30天 0.2分
+  const days = parseFloat(d.market_days) || 0;
+  total += days >= 30 ? 0.2 : 0;
+  // 有效竞品数 <3家 1.8分
+  const rivals = parseFloat(d.market_rivals) || 0;
+  total += rivals < 3 ? 1.8 : rivals < 6 ? 1.0 : rivals < 10 ? 0.5 : 0;
+  // 大盘维度 1分
+  const trend = parseFloat(d.bigdata_trend) || 0;
+  total += trend >= 20000 ? 1.0 : trend >= 10000 ? 0.5 : 0;
+  // 利润维度 3分
+  const profit = parseFloat(d.profit_monthly) || 0;
+  total += profit >= 30000 ? 3.0 : profit >= 10000 ? 2.0 : profit >= 5000 ? 1.0 : 0;
+
+  return Math.min(10, Math.round(total * 10) / 10);
+}
+
+function openScoreModal() {
+  document.getElementById('score-modal-overlay').style.display = 'flex';
+  renderScoreList();
+}
+function closeScoreModal() {
+  document.getElementById('score-modal-overlay').style.display = 'none';
+  document.getElementById('score-form-wrap').style.display = 'none';
+  document.getElementById('score-list-wrap').style.display = 'block';
+}
+function showScoreForm(idx) {
+  const scores = loadScores();
+  const d = idx >= 0 ? scores[idx] : {};
+  document.getElementById('score-form-idx').value = idx >= 0 ? idx : '';
+  document.getElementById('sf-name').value = d.name || '';
+  document.getElementById('sf-comp_notes').value = d.comp_notes || '';
+  document.getElementById('sf-comp_daily').value = d.comp_daily || '';
+  document.getElementById('sf-comp_link_sales').value = d.comp_link_sales || '';
+  document.getElementById('sf-comp_fans').value = d.comp_fans || '';
+  document.getElementById('sf-market_days').value = d.market_days || '';
+  document.getElementById('sf-market_rivals').value = d.market_rivals || '';
+  document.getElementById('sf-bigdata_trend').value = d.bigdata_trend || '';
+  document.getElementById('sf-profit_monthly').value = d.profit_monthly || '';
+  document.getElementById('score-form-wrap').style.display = 'block';
+  document.getElementById('score-list-wrap').style.display = 'none';
+  updateLiveScore();
+}
+function updateLiveScore() {
+  const d = {
+    comp_notes: document.getElementById('sf-comp_notes').value,
+    comp_daily: document.getElementById('sf-comp_daily').value,
+    comp_link_sales: document.getElementById('sf-comp_link_sales').value,
+    comp_fans: document.getElementById('sf-comp_fans').value,
+    market_days: document.getElementById('sf-market_days').value,
+    market_rivals: document.getElementById('sf-market_rivals').value,
+    bigdata_trend: document.getElementById('sf-bigdata_trend').value,
+    profit_monthly: document.getElementById('sf-profit_monthly').value,
+  };
+  const s = calcScore(d);
+  const el = document.getElementById('live-score');
+  el.textContent = s;
+  el.style.color = s >= 8 ? '#00c9a7' : s >= 6 ? '#ffd60a' : '#ff2d55';
+}
+function saveScoreForm() {
+  const name = document.getElementById('sf-name').value.trim();
+  if (!name) { alert('请输入产品名称'); return; }
+  const d = {
+    name,
+    comp_notes: document.getElementById('sf-comp_notes').value,
+    comp_daily: document.getElementById('sf-comp_daily').value,
+    comp_link_sales: document.getElementById('sf-comp_link_sales').value,
+    comp_fans: document.getElementById('sf-comp_fans').value,
+    market_days: document.getElementById('sf-market_days').value,
+    market_rivals: document.getElementById('sf-market_rivals').value,
+    bigdata_trend: document.getElementById('sf-bigdata_trend').value,
+    profit_monthly: document.getElementById('sf-profit_monthly').value,
+    savedAt: new Date().toISOString().slice(0,10),
+  };
+  d.score = calcScore(d);
+  const scores = loadScores();
+  const idx = document.getElementById('score-form-idx').value;
+  if (idx !== '') { scores[parseInt(idx)] = d; } else { scores.unshift(d); }
+  saveScores(scores);
+  document.getElementById('score-form-wrap').style.display = 'none';
+  document.getElementById('score-list-wrap').style.display = 'block';
+  renderScoreList();
+}
+function deleteScore(idx) {
+  if (!confirm('确认删除此评分记录？')) return;
+  const scores = loadScores();
+  scores.splice(idx, 1);
+  saveScores(scores);
+  renderScoreList();
+}
+function renderScoreList() {
+  const scores = loadScores();
+  const wrap = document.getElementById('score-records');
+  if (!scores.length) {
+    wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px 0;font-size:13px;">暂无评分记录，点击右上角"新建评分"开始</div>';
+    return;
+  }
+  wrap.innerHTML = scores.map((s,i) => {
+    const color = s.score >= 8 ? '#00c9a7' : s.score >= 6 ? '#ffd60a' : '#ff2d55';
+    const tag = s.score >= 8 ? '✅ 可以尝试' : s.score >= 6 ? '⚠️ 谨慎考虑' : '❌ 建议放弃';
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid ${color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:22px;font-weight:700;color:${color};font-family:var(--mono);">${s.score}</span>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+        <div style="font-size:12px;color:${color};">${tag}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">保存于 ${s.savedAt}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="showScoreForm(${i})" style="padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;">编辑</button>
+        <button onclick="deleteScore(${i})" style="padding:5px 10px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.3);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+// ── End 选品评分系统 ──────────────────────────────────────
 
 </script>
+
+<!-- 评分弹窗 -->
+<div id="score-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:640px;padding:28px;position:relative;">
+    <button onclick="closeScoreModal()" style="position:absolute;top:16px;right:16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
+
+    <!-- 列表页 -->
+    <div id="score-list-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:500;">⭐ 选品评分记录</div>
+        <button onclick="showScoreForm(-1)" style="padding:6px 14px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;color:var(--gold);font-size:12px;cursor:pointer;">+ 新建评分</button>
+      </div>
+      <div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7;">
+        <span style="color:var(--gold);font-weight:500;">📌 使用说明</span><br>
+        本评分系统专为寻找<strong style="color:var(--text);">蓝海低竞争产品</strong>而设计，核心逻辑是：竞争越少、市场越真实、利润越高，评分越高。一般来说，得分达到8分及以上，说明该产品在竞争、市场与利润三个维度综合表现优秀，具备实际操作价值。<br>
+        若你的选品理念侧重爆品跟卖、高流量赛道，本评分标准可能不适用，请根据自身策略灵活参考。<br>
+        <span style="color:var(--text3);font-size:11px;">* 评分记录仅保存在本设备浏览器，清除缓存后将丢失。</span>
+      </div>
+      <div id="score-records"></div>
+    </div>
+
+    <!-- 表单页 -->
+    <div id="score-form-wrap" style="display:none;">
+      <input type="hidden" id="score-form-idx">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:15px;font-weight:500;">填写评分数据</div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">当前评分</div>
+          <div id="live-score" style="font-size:32px;font-weight:700;font-family:var(--mono);">0</div>
+          <div style="font-size:11px;color:var(--text3);">满分10分 · 8分以上可尝试</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">产品名称 *</div>
+        <input id="sf-name" type="text" placeholder="输入产品名称" oninput="updateLiveScore()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--gold);font-family:var(--mono);margin-bottom:12px;">竞争维度（4分）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品笔记总数 <span style="color:var(--text3)">（&lt;300篇得1.5分）</span></div>
+            <input id="sf-comp_notes" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品日更笔记数 <span style="color:var(--text3)">（&lt;5篇得1.5分）</span></div>
+            <input id="sf-comp_daily" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品链接销量 <span style="color:var(--text3)">（&lt;1万得0.8分）</span></div>
+            <input id="sf-comp_link_sales" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品粉丝数 <span style="color:var(--text3)">（&lt;1000得0.2分）</span></div>
+            <input id="sf-comp_fans" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--teal);font-family:var(--mono);margin-bottom:12px;">市场维度（2分）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">起号时间（天） <span style="color:var(--text3)">（≥30天得0.2分）</span></div>
+            <input id="sf-market_days" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">有效竞品数量 <span style="color:var(--text3)">（&lt;3家得1.8分）</span></div>
+            <input id="sf-market_rivals" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-bottom:12px;">大盘维度（1分）</div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">全年大盘搜索指数 <span style="color:var(--text3)">（≥2万得1分）</span></div>
+          <input id="sf-bigdata_trend" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:20px;">
+        <div style="font-size:11px;color:var(--red);font-family:var(--mono);margin-bottom:12px;">利润维度（3分）</div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">预估月利润（元） <span style="color:var(--text3)">（≥3万得3分 / ≥1万得2分 / ≥5千得1分）</span></div>
+          <input id="sf-profit_monthly" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('score-form-wrap').style.display='none';document.getElementById('score-list-wrap').style.display='block';" style="flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">← 返回列表</button>
+        <button onclick="saveScoreForm()" style="flex:2;padding:10px;background:rgba(255,214,10,0.15);border:1px solid rgba(255,214,10,0.4);border-radius:8px;color:var(--gold);font-size:13px;font-weight:500;cursor:pointer;">保存评分</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
