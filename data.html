@@ -1778,6 +1778,10 @@ function setSortAndFilter(col) {
 
 function getFiltered() {
   let data = [...RAW_DATA];
+  // 过滤私有商品：有submittedBy的只显示给对应用户，管理员可看全部
+  if (currentRole !== 'admin') {
+    data = data.filter(d => !d.submittedBy || d.submittedBy === DEVICE_FP);
+  }
   if (currentCat !== 'all') data = data.filter(d => d.category === currentCat);
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
@@ -1839,6 +1843,10 @@ function renderTable() {
       ? '<span class="hot-tag" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a">👑 高粉爆品</span>'
       : '';
 
+    const privateTag = (item.submittedBy && item.submittedBy === DEVICE_FP)
+      ? '<span class="hot-tag" style="background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.3);color:#a855f7">🔒 我的专属</span>'
+      : '';
+
     const buy24hDisplay = item.buy24h ? item.buy24h.toLocaleString() + '+' : '—';
     const fav = isFav(item.id);
     return `
@@ -1848,7 +1856,7 @@ function renderTable() {
         <td><span class="category-tag ${catClass}">${(item.category === '美妆类目' || item.category === '美妆目') ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
-            <div class="product-name">${escHtml(item.name)}${signalTag}</div>
+            <div class="product-name">${escHtml(item.name)}${signalTag}${privateTag}</div>
             <div class="store-name">${escHtml(item.store)}</div>
           </div>
         </td>
