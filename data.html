@@ -2565,23 +2565,23 @@ function calcScore(d) {
   // 竞争维度 4分
   // 竞品笔记数权重 <300篇 1.5分
   const notes = parseFloat(d.comp_notes) || 0;
-  total += notes < 300 ? 1.5 : notes < 1000 ? 0.8 : 0;
+  total += notes <= 300 ? 1.5 : notes <= 1000 ? 0.8 : 0;
   // 竞品日更笔记数 <5篇 1.5分
   const daily = parseFloat(d.comp_daily) || 0;
-  total += daily < 5 ? 1.5 : daily < 15 ? 0.8 : 0;
+  total += daily <= 5 ? 1.5 : daily <= 15 ? 0.8 : 0;
   // 竞品链接权重 <1万 0.8分
   const linkSales = parseFloat(d.comp_link_sales) || 0;
-  total += linkSales < 10000 ? 0.8 : linkSales < 30000 ? 0.4 : 0;
+  total += linkSales <= 10000 ? 0.8 : linkSales <= 30000 ? 0.4 : 0;
   // 竞品粉丝权重 <1000 0.2分
   const fans = parseFloat(d.comp_fans) || 0;
-  total += fans < 1000 ? 0.2 : 0;
+  total += fans <= 1000 ? 0.2 : 0;
   // 市场维度 2分
   // 起号时间 >30天 0.2分
   const days = parseFloat(d.market_days) || 0;
   total += days >= 30 ? 0.2 : 0;
   // 有效竞品数 <3家 1.8分
   const rivals = parseFloat(d.market_rivals) || 0;
-  total += rivals < 3 ? 1.8 : rivals < 6 ? 1.0 : rivals < 10 ? 0.5 : 0;
+  total += rivals <= 3 ? 1.8 : rivals <= 6 ? 1.0 : rivals <= 10 ? 0.5 : 0;
   // 大盘维度 1分
   const trend = parseFloat(d.bigdata_trend) || 0;
   total += trend >= 20000 ? 1.0 : trend >= 10000 ? 0.5 : 0;
@@ -2736,19 +2736,19 @@ function renderScoreList() {
         <div style="font-size:11px;color:var(--gold);font-family:var(--mono);margin-bottom:12px;">竞争维度（4分）</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品笔记总数 <span style="color:var(--text3)">（&lt;300篇得1.5分）</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品笔记总数 <span style="color:var(--text3)">（≤300篇得1.5分）</span></div>
             <input id="sf-comp_notes" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品日更笔记数 <span style="color:var(--text3)">（&lt;5篇得1.5分）</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品日更笔记数 <span style="color:var(--text3)">（≤5篇得1.5分）</span></div>
             <input id="sf-comp_daily" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品链接销量 <span style="color:var(--text3)">（&lt;1万得0.8分）</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品链接销量 <span style="color:var(--text3)">（≤1万得0.8分）</span></div>
             <input id="sf-comp_link_sales" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品粉丝数 <span style="color:var(--text3)">（&lt;1000得0.2分）</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">竞品粉丝数 <span style="color:var(--text3)">（≤1000得0.2分）</span></div>
             <input id="sf-comp_fans" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
         </div>
@@ -2762,7 +2762,7 @@ function renderScoreList() {
             <input id="sf-market_days" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">有效竞品数量 <span style="color:var(--text3)">（&lt;3家得1.8分）</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">有效竞品数量 <span style="color:var(--text3)">（≤3家得1.8分）</span></div>
             <input id="sf-market_rivals" type="number" placeholder="0" oninput="updateLiveScore()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;">
           </div>
         </div>
