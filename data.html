@@ -959,6 +959,7 @@
     </div>
     <div class="filter-group" id="cat-filters"></div>
     <button id="fav-filter-btn" class="filter-btn" onclick="toggleFavFilter()" style="white-space:nowrap;">☆ 我的收藏</button>
+    <button id="monitor-filter-btn" class="filter-btn" onclick="toggleMonitorFilter()" style="white-space:nowrap;display:none;">📡 我的监控</button>
     <select class="sort-select" id="sort-select" onchange="filterAndRender()">
       <option value="sales">按销量排序</option>
       <option value="addCart">按加购量排序</option>
@@ -1354,6 +1355,11 @@ function enterApp(role) {
   document.getElementById('monitor-btn-wrap').style.display = role === 'user'  ? '' : 'none';
   document.getElementById('score-btn-wrap').style.display   = '';
   document.getElementById('supply-btn-wrap').style.display  = '';
+  // 我的监控筛选按钮只对普通用户显示
+  if (role === 'user') {
+    document.getElementById('monitor-filter-btn').style.display = '';
+    updateMonitorBtn();
+  }
   // 货源对接仅年度会员可用
   const supplyBtn = document.getElementById('supply-btn');
   const code = loadSession()?.code || '';
@@ -1785,6 +1791,7 @@ function getFiltered() {
   if (currentCat !== 'all') data = data.filter(d => d.category === currentCat);
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
+  if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
   const sort = document.getElementById('sort-select').value;
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
@@ -2506,6 +2513,33 @@ function updateFavBtn() {
   }
 }
 // ── End Favourites ────────────────────────────────────────
+
+// ── Monitor Filter ────────────────────────────────────────
+let showMonitorOnly = false;
+
+function toggleMonitorFilter() {
+  showMonitorOnly = !showMonitorOnly;
+  currentPage = 1;
+  updateMonitorBtn();
+  renderTable();
+}
+
+function updateMonitorBtn() {
+  const btn = document.getElementById('monitor-filter-btn');
+  const count = RAW_DATA.filter(d => d.submittedBy === DEVICE_FP).length;
+  if (showMonitorOnly) {
+    btn.style.background = 'rgba(168,85,247,0.15)';
+    btn.style.borderColor = 'rgba(168,85,247,0.35)';
+    btn.style.color = '#a855f7';
+    btn.textContent = `📡 我的监控 (${count})`;
+  } else {
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.textContent = count > 0 ? `📡 我的监控 (${count})` : '📡 我的监控';
+  }
+}
+// ── End Monitor Filter ────────────────────────────────────
 
 // ── Delete Product ────────────────────────────────────────
 function deleteProduct(id) {
