@@ -1109,6 +1109,7 @@ let currentSort         = 'sales'; // 当前排序字段
 let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
+let showMonitorOnly     = false;   // 是否只显示监控商品
 let trendChartInstance  = null;    // 趋势图 Chart 实例
 let pendingImportRows   = [];      // 待确认导入的数据行
 let _iCount             = 0;       // 管理员快捷键计数
@@ -2515,7 +2516,6 @@ function updateFavBtn() {
 // ── End Favourites ────────────────────────────────────────
 
 // ── Monitor Filter ────────────────────────────────────────
-let showMonitorOnly = false;
 
 function toggleMonitorFilter() {
   showMonitorOnly = !showMonitorOnly;
