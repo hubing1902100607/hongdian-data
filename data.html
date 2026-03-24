@@ -2602,7 +2602,8 @@ function exportExcel() {
     ].join(',');
   });
 
-  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const brandRow = '数据来源：hongdiandata.com（红点数据）/ 公众号：北苑笔谈';
+  const csv = BOM + brandRow + '\n' + headers.join(',') + '\n' + rows.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
