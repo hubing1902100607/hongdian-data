@@ -1943,6 +1943,7 @@ function renderTable() {
   }).join('');
 
   renderPagination(total);
+  setTimeout(initBottomScrollbar, 50);
 }
 
 function renderPagination(total) {
@@ -3031,6 +3032,7 @@ function renderScoreList() {
 // ── End 选品评分系统 ──────────────────────────────────────
 
 // ── 底部横向滚动条同步 ────────────────────────────────────
+let _scrollbarInited = false;
 function initBottomScrollbar() {
   const wrap = document.getElementById('table-wrap');
   const barWrap = document.getElementById('bottom-scrollbar-wrap');
@@ -3038,11 +3040,12 @@ function initBottomScrollbar() {
   if (!wrap || !barWrap || !barInner) return;
   function syncWidth() { barInner.style.width = wrap.scrollWidth + 'px'; }
   syncWidth();
-  barWrap.addEventListener('scroll', () => { wrap.scrollLeft = barWrap.scrollLeft; });
-  wrap.addEventListener('scroll', () => { barWrap.scrollLeft = wrap.scrollLeft; });
-  new MutationObserver(syncWidth).observe(wrap, { childList: true, subtree: true });
+  if (!_scrollbarInited) {
+    barWrap.addEventListener('scroll', () => { wrap.scrollLeft = barWrap.scrollLeft; });
+    wrap.addEventListener('scroll', () => { barWrap.scrollLeft = wrap.scrollLeft; });
+    _scrollbarInited = true;
+  }
 }
-document.addEventListener('DOMContentLoaded', initBottomScrollbar);
 // ── End 底部横向滚动条 ────────────────────────────────────
 
 </script>
