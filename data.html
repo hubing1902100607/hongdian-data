@@ -330,7 +330,7 @@
   }
 
   .table-wrap {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   table {
@@ -983,7 +983,7 @@
 
   <!-- Table -->
   <div class="table-card">
-    <div class="table-wrap">
+    <div class="table-wrap" id="table-wrap">
       <table>
         <thead>
           <tr>
@@ -1004,6 +1004,10 @@
       </table>
     </div>
     <div class="pagination" id="pagination"></div>
+    <!-- 底部固定横向滚动条 -->
+    <div id="bottom-scrollbar-wrap" style="overflow-x:auto;overflow-y:hidden;height:14px;background:var(--bg2);border-top:1px solid var(--border);">
+      <div id="bottom-scrollbar-inner" style="height:1px;"></div>
+    </div>
   </div>
 </main>
 
@@ -3025,6 +3029,21 @@ function renderScoreList() {
   }).join('');
 }
 // ── End 选品评分系统 ──────────────────────────────────────
+
+// ── 底部横向滚动条同步 ────────────────────────────────────
+function initBottomScrollbar() {
+  const wrap = document.getElementById('table-wrap');
+  const barWrap = document.getElementById('bottom-scrollbar-wrap');
+  const barInner = document.getElementById('bottom-scrollbar-inner');
+  if (!wrap || !barWrap || !barInner) return;
+  function syncWidth() { barInner.style.width = wrap.scrollWidth + 'px'; }
+  syncWidth();
+  barWrap.addEventListener('scroll', () => { wrap.scrollLeft = barWrap.scrollLeft; });
+  wrap.addEventListener('scroll', () => { barWrap.scrollLeft = wrap.scrollLeft; });
+  new MutationObserver(syncWidth).observe(wrap, { childList: true, subtree: true });
+}
+document.addEventListener('DOMContentLoaded', initBottomScrollbar);
+// ── End 底部横向滚动条 ────────────────────────────────────
 
 </script>
 
