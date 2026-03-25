@@ -326,7 +326,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .table-wrap {
@@ -1004,10 +1004,10 @@
       </table>
     </div>
     <div class="pagination" id="pagination"></div>
-    <!-- 底部固定横向滚动条 -->
-    <div id="bottom-scrollbar-wrap" style="overflow-x:auto;overflow-y:hidden;height:14px;background:var(--bg2);border-top:1px solid var(--border);">
-      <div id="bottom-scrollbar-inner" style="height:1px;"></div>
-    </div>
+  </div>
+  <!-- 底部横向滚动条 -->
+  <div id="bottom-scrollbar-wrap" style="overflow-x:auto;overflow-y:hidden;height:14px;background:var(--card);border:1px solid var(--border);border-radius:0 0 14px 14px;margin-top:-1px;">
+    <div id="bottom-scrollbar-inner" style="height:1px;"></div>
   </div>
 </main>
 
@@ -1951,11 +1951,25 @@ function renderPagination(total) {
   const wrap = document.getElementById('pagination');
   if (pages <= 1) { wrap.innerHTML = ''; return; }
 
-  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← 上一页</button>`;
-  for (let i = 1; i <= pages; i++) {
-    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  const btn = (i, label, active, disabled) =>
+    `<button class="page-btn ${active?'active':''}" onclick="goPage(${i})" ${disabled?'disabled':''}>${label}</button>`;
+  const ellipsis = `<span style="color:var(--text3);padding:0 4px;line-height:32px;">…</span>`;
+
+  let html = btn(currentPage - 1, '← 上一页', false, currentPage === 1);
+
+  if (pages <= 7) {
+    for (let i = 1; i <= pages; i++) html += btn(i, i, i === currentPage, false);
+  } else {
+    html += btn(1, 1, currentPage === 1, false);
+    if (currentPage > 3) html += ellipsis;
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(pages - 1, currentPage + 1); i++) {
+      html += btn(i, i, i === currentPage, false);
+    }
+    if (currentPage < pages - 2) html += ellipsis;
+    html += btn(pages, pages, currentPage === pages, false);
   }
-  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>下一页 →</button>`;
+
+  html += btn(currentPage + 1, '下一页 →', false, currentPage === pages);
   wrap.innerHTML = html;
 }
 
