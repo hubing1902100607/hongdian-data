@@ -912,17 +912,17 @@
     <div class="kpi-card" id="kpi-card-low" onclick="toggleSignalFilter('low')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">💥 低粉爆品</div>
       <div class="kpi-value" id="kpi-low-fans">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 ≥100</div>
     </div>
     <div class="kpi-card" id="kpi-card-high" onclick="toggleSignalFilter('high')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">👑 高粉爆品</div>
       <div class="kpi-value" id="kpi-high-fans">—</div>
-      <div class="kpi-desc">粉丝 &gt;5000 · 24h加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 ≥5000 · 24h加购 ≥500</div>
     </div>
     <div class="kpi-card" id="kpi-card-hidden" onclick="toggleSignalFilter('hidden')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &lt;100 · 24h购买 &gt;100</div>
+      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 ≤100 · 24h购买 ≥100</div>
     </div>
   </div>
 
@@ -1662,19 +1662,19 @@ function renderKPIs() {
   // 低粉爆品：粉丝 < 500 且 24h加购 > 500（不限销量）
   const lowFansBoom = RAW_DATA.filter(d => {
     const fansNum = Number(d.fans) || 0;
-    return fansNum < 500 && d.addCart > 500;
+    return fansNum <= 1000 && d.addCart >= 100;
   }).length;
 
   // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且 24h购买人数 > 100
   const hidden = RAW_DATA.filter(d => {
     const fansNum = Number(d.fans) || 0;
-    return fansNum < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
+    return fansNum <= 1000 && d.addCart <= 100 && (d.buy24h || 0) >= 100;
   }).length;
 
   // 高粉爆品：粉丝 > 5000 且 24h加购 > 500
   const highFansBoom = RAW_DATA.filter(d => {
     const fansNum = Number(d.fans) || 0;
-    return fansNum > 5000 && d.addCart > 500;
+    return fansNum >= 5000 && d.addCart >= 500;
   }).length;
 
   document.getElementById('kpi-total').textContent = total;
@@ -1836,9 +1836,9 @@ function getFiltered() {
   if (currentSignal) {
     data = data.filter(d => {
       const f = Number(d.fans) || 0;
-      if (currentSignal === 'low')    return f < 500 && d.addCart > 500;
-      if (currentSignal === 'high')   return f > 5000 && d.addCart > 500;
-      if (currentSignal === 'hidden') return f < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
+      if (currentSignal === 'low')    return f <= 1000 && d.addCart >= 100;
+      if (currentSignal === 'high')   return f >= 5000 && d.addCart >= 500;
+      if (currentSignal === 'hidden') return f <= 1000 && d.addCart <= 100 && (d.buy24h || 0) >= 100;
       return true;
     });
   }
@@ -1887,9 +1887,9 @@ function renderTable() {
     const barW = Math.round((item.sales / maxSales) * 100);
 
     const fansNum = Number(item.fans) || 0;
-    const isLowFansBoom  = fansNum < 500 && item.addCart > 500;
-    const isHighFansBoom = fansNum > 5000 && item.addCart > 500;
-    const isHidden       = fansNum < 500 && item.addCart < 100 && (item.buy24h || 0) > 100;
+    const isLowFansBoom  = fansNum <= 1000 && item.addCart >= 100;
+    const isHighFansBoom = fansNum >= 5000 && item.addCart >= 500;
+    const isHidden       = fansNum <= 1000 && item.addCart <= 100 && (item.buy24h || 0) >= 100;
 
     // 优先级：低粉爆品 > 隐藏潜力 > 高粉爆品
     const signalTag = isLowFansBoom
@@ -2739,8 +2739,8 @@ function exportExcel() {
 
   const rows = filtered.map((item, idx) => {
     const fansNum = Number(item.fans) || 0;
-    const isLowFansBoom = fansNum < 500 && item.addCart > 500;
-    const isHidden      = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
+    const isLowFansBoom = fansNum <= 1000 && item.addCart >= 100;
+    const isHidden      = fansNum <= 1000 && item.addCart <= 100 && (item.buy24h || 0) >= 100;
     const signal = isLowFansBoom ? '💥低粉爆品' : isHidden ? '🌱隐藏潜力' : '';
     const gmv = (item.sales * item.price).toFixed(0);
     const fans = Number(item.fans) || 0;
