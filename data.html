@@ -1661,19 +1661,19 @@ function renderKPIs() {
 
   // 低粉爆品：粉丝 < 500 且 24h加购 > 500（不限销量）
   const lowFansBoom = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    const fansNum = Number(d.fans) || 0;
     return fansNum < 500 && d.addCart > 500;
   }).length;
 
   // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且 24h购买人数 > 100
   const hidden = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    const fansNum = Number(d.fans) || 0;
     return fansNum < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
   }).length;
 
   // 高粉爆品：粉丝 > 5000 且 24h加购 > 500
   const highFansBoom = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    const fansNum = Number(d.fans) || 0;
     return fansNum > 5000 && d.addCart > 500;
   }).length;
 
@@ -1835,7 +1835,7 @@ function getFiltered() {
   if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
   if (currentSignal) {
     data = data.filter(d => {
-      const f = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : (Number(d.fans) || 0);
+      const f = Number(d.fans) || 0;
       if (currentSignal === 'low')    return f < 500 && d.addCart > 500;
       if (currentSignal === 'high')   return f > 5000 && d.addCart > 500;
       if (currentSignal === 'hidden') return f < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
@@ -1846,7 +1846,7 @@ function getFiltered() {
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
     const f = item.fans;
-    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
+    return Number(f) || 0;
   };
   if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
   else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
@@ -1886,7 +1886,7 @@ function renderTable() {
     const rev = estimateRevenue(item);
     const barW = Math.round((item.sales / maxSales) * 100);
 
-    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
+    const fansNum = Number(item.fans) || 0;
     const isLowFansBoom  = fansNum < 500 && item.addCart > 500;
     const isHighFansBoom = fansNum > 5000 && item.addCart > 500;
     const isHidden       = fansNum < 500 && item.addCart < 100 && (item.buy24h || 0) > 100;
@@ -1927,7 +1927,7 @@ function renderTable() {
         <td><span class="add-to-cart">+${item.addCart.toLocaleString()}</span></td>
         <td><span style="font-family:var(--mono);font-size:12px;color:var(--purple)">${buy24hDisplay}</span></td>
         <td><span class="price-num">¥${item.price.toFixed(2)}</span></td>
-        <td><span class="fans-num">${typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString()}</span></td>
+        <td><span class="fans-num">${(Number(item.fans) || 0).toLocaleString()}</span></td>
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
         <td style="white-space:nowrap">
           <button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button>
@@ -1973,7 +1973,7 @@ function openModal(id) {
   if (!item) return;
   const rev = estimateRevenue(item);
   const catClass = CAT_STYLES[item.category] || 'cat-food';
-  const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString();
+  const fansDisplay = (Number(item.fans) || 0).toLocaleString();
 
   // Calculate week-over-week growth (last vs second-to-last in history)
   const hist = item.salesHistory;
@@ -2137,7 +2137,7 @@ function exportToExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格','店铺粉丝','预估GMV','商品链接'];
   const rows = data.map((item, idx) => {
     const gmv = estimateRevenue(item);
-    const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans;
+    const fansDisplay = (Number(item.fans) || 0).toLocaleString();
     return [
       idx + 1,
       item.category,
@@ -2738,12 +2738,12 @@ function exportExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','24h购买人数','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
 
   const rows = filtered.map((item, idx) => {
-    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
+    const fansNum = Number(item.fans) || 0;
     const isLowFansBoom = fansNum < 500 && item.addCart > 500;
     const isHidden      = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
     const signal = isLowFansBoom ? '💥低粉爆品' : isHidden ? '🌱隐藏潜力' : '';
     const gmv = (item.sales * item.price).toFixed(0);
-    const fans = typeof item.fans === 'number' && item.fans < 10 ? item.fans + 'w' : item.fans;
+    const fans = Number(item.fans) || 0;
 
     return [
       idx + 1,
