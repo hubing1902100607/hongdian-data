@@ -2709,27 +2709,23 @@ async function saveEdit() {
   btn.textContent = '保存中…';
 
   try {
-    // 用import接口更新单条商品（取最新一条salesHistory的日期作为date）
-    const lastHistory = updated.salesHistory && updated.salesHistory.length
-      ? updated.salesHistory[updated.salesHistory.length - 1]
-      : null;
-    const rowToSend = {
-      link:     updated.link,
-      sales:    updated.sales,
-      date:     lastHistory ? lastHistory.date : new Date().toISOString().slice(0,10),
-      addCart:  updated.addCart,
-      buy24h:   updated.buy24h,
-      price:    updated.price,
-      fans:     updated.fans,
-      name:     updated.name,
-      category: updated.category,
-      store:    updated.store,
+    // 用专用edit接口强制覆盖所有字段
+    const fields = {
+      name:        updated.name,
+      category:    updated.category,
+      store:       updated.store,
+      price:       updated.price,
+      sales:       updated.sales,
+      addCart:     updated.addCart,
+      buy24h:      updated.buy24h,
+      fans:        updated.fans,
+      link:        updated.link,
       submittedBy: updated.submittedBy || '',
     };
-    const res = await fetch(WORKER_URL + '/api/import?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+    const res = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows: [rowToSend] }),
+      body: JSON.stringify({ id, fields }),
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || '保存失败');
