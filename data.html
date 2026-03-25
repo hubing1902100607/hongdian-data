@@ -1913,7 +1913,8 @@ function renderTable() {
         <td><span class="category-tag ${catClass}">${(item.category === '美妆类目' || item.category === '美妆目') ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
-            <div class="product-name">${escHtml(item.name)}${signalTag}${privateTag}</div>
+            <div class="product-name">${escHtml(item.name)}</div>
+            ${(signalTag || privateTag) ? '<div style="margin-top:4px;">' + signalTag + privateTag + '</div>' : ''}
             <div class="store-name">${escHtml(item.store)}</div>
           </div>
         </td>
