@@ -909,20 +909,20 @@
       <div class="kpi-value" id="kpi-total">—</div>
       <div class="kpi-desc">累计已追踪商品数</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" id="kpi-card-low" onclick="toggleSignalFilter('low')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">💥 低粉爆品</div>
       <div class="kpi-value" id="kpi-low-fans">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 ≥100</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" id="kpi-card-high" onclick="toggleSignalFilter('high')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">👑 高粉爆品</div>
       <div class="kpi-value" id="kpi-high-fans">—</div>
-      <div class="kpi-desc">粉丝 &gt;5000 · 24h加购 &gt;500</div>
+      <div class="kpi-desc">粉丝 ≥5000 · 24h加购 ≥500</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" id="kpi-card-hidden" onclick="toggleSignalFilter('hidden')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &lt;100 · 24h购买 &gt;100</div>
+      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 &lt;100 · 24h购买 ≥100</div>
     </div>
   </div>
 
@@ -1110,6 +1110,7 @@ let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let showMonitorOnly     = false;   // 是否只显示监控商品
+let currentSignal       = null;    // 'low' | 'high' | 'hidden' | null
 let trendChartInstance  = null;    // 趋势图 Chart 实例
 let pendingImportRows   = [];      // 待确认导入的数据行
 let _iCount             = 0;       // 管理员快捷键计数
@@ -1550,6 +1551,29 @@ function renderKPIs() {
   document.getElementById('kpi-hidden').textContent = hidden;
 }
 
+function toggleSignalFilter(signal) {
+  const cards  = { low: 'kpi-card-low', high: 'kpi-card-high', hidden: 'kpi-card-hidden' };
+  const colors = { low: '#00c9a7', high: '#ffd60a', hidden: '#bf5af2' };
+
+  if (currentSignal === signal) {
+    // 取消筛选
+    currentSignal = null;
+    Object.values(cards).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.borderColor = '';
+    });
+  } else {
+    // 切换到新筛选
+    currentSignal = signal;
+    Object.entries(cards).forEach(([key, id]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.borderColor = key === signal ? colors[signal] : '';
+    });
+  }
+  currentPage = 1;
+  renderTable();
+}
+
 // Charts
 function renderCharts() {
   const sorted = [...RAW_DATA].sort((a,b) => b.sales - a.sales).slice(0, 8);
@@ -1700,6 +1724,16 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
+  // KPI快捷筛选
+  if (currentSignal) {
+    data = data.filter(d => {
+      const f = Number(d.fans) || 0;
+      if (currentSignal === 'low')    return f <= 1000 && d.addCart >= 100;
+      if (currentSignal === 'high')   return f >= 5000 && d.addCart >= 500;
+      if (currentSignal === 'hidden') return f <= 1000 && d.addCart < 100 && (d.buy24h || 0) >= 100;
+      return true;
+    });
+  }
   const sort = document.getElementById('sort-select').value;
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
