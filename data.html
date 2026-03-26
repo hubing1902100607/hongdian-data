@@ -330,7 +330,7 @@
   }
 
   .table-wrap {
-    overflow-x: hidden;
+    overflow-x: auto;
   }
 
   table {
@@ -909,20 +909,20 @@
       <div class="kpi-value" id="kpi-total">—</div>
       <div class="kpi-desc">累计已追踪商品数</div>
     </div>
-    <div class="kpi-card" id="kpi-card-low" onclick="toggleSignalFilter('low')" style="cursor:pointer;transition:border-color .2s;">
+    <div class="kpi-card">
       <div class="kpi-label">💥 低粉爆品</div>
       <div class="kpi-value" id="kpi-low-fans">—</div>
-      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 ≥100</div>
+      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &gt;500</div>
     </div>
-    <div class="kpi-card" id="kpi-card-high" onclick="toggleSignalFilter('high')" style="cursor:pointer;transition:border-color .2s;">
+    <div class="kpi-card">
       <div class="kpi-label">👑 高粉爆品</div>
       <div class="kpi-value" id="kpi-high-fans">—</div>
-      <div class="kpi-desc">粉丝 ≥5000 · 24h加购 ≥500</div>
+      <div class="kpi-desc">粉丝 &gt;5000 · 24h加购 &gt;500</div>
     </div>
-    <div class="kpi-card" id="kpi-card-hidden" onclick="toggleSignalFilter('hidden')" style="cursor:pointer;transition:border-color .2s;">
+    <div class="kpi-card">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 <100 · 24h购买 ≥100</div>
+      <div class="kpi-desc">粉丝 &lt;500 · 24h加购 &lt;100 · 24h购买 &gt;100</div>
     </div>
   </div>
 
@@ -968,12 +968,6 @@
       <option value="revenue">按预估GMV排序</option>
       <option value="fans">按粉丝数排序</option>
     </select>
-    <select onchange="PAGE_SIZE=parseInt(this.value);currentPage=1;filterAndRender()" style="background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 10px;color:#9090a8;font-size:12px;outline:none;cursor:pointer;">
-      <option value="10">每页10条</option>
-      <option value="20">每页20条</option>
-      <option value="30">每页30条</option>
-      <option value="50">每页50条</option>
-    </select>
     <div class="results-count" id="results-count"></div>
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
@@ -983,7 +977,7 @@
 
   <!-- Table -->
   <div class="table-card">
-    <div class="table-wrap" id="table-wrap">
+    <div class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -1005,44 +999,8 @@
     </div>
     <div class="pagination" id="pagination"></div>
   </div>
-  <!-- 底部横向滚动条 -->
-  <div id="bottom-scrollbar-wrap" style="overflow-x:auto;overflow-y:hidden;height:14px;background:var(--card);border:1px solid var(--border);border-radius:0 0 14px 14px;margin-top:-1px;">
-    <div id="bottom-scrollbar-inner" style="height:1px;"></div>
-  </div>
 </main>
 
-
-<!-- Edit Modal -->
-<div id="edit-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#16161f;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-size:15px;font-weight:500;">✏️ 编辑商品</div>
-      <button onclick="closeEditModal()" style="background:none;border:none;color:#9090a8;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    <input type="hidden" id="edit-id">
-    <div style="display:grid;gap:12px;">
-      <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">商品名称</div><input id="edit-name" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">类目</div><input id="edit-category" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">店铺名称</div><input id="edit-store" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">价格 (¥)</div><input id="edit-price" type="number" step="0.01" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">销量</div><input id="edit-sales" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">24h加购</div><input id="edit-addCart" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">24h购买</div><input id="edit-buy24h" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">店铺粉丝</div><input id="edit-fans" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-      </div>
-      <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">商品链接</div><input id="edit-link" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-      <button onclick="closeEditModal()" style="padding:10px 20px;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#9090a8;font-size:13px;cursor:pointer;">取消</button>
-      <button id="edit-save-btn" onclick="saveEdit()" style="padding:10px 20px;background:#ffd60a;border:none;border-radius:8px;color:#000;font-size:13px;font-weight:500;cursor:pointer;">💾 保存</button>
-    </div>
-  </div>
-</div>
 <!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
@@ -1152,7 +1110,6 @@ let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let showMonitorOnly     = false;   // 是否只显示监控商品
-let currentSignal       = null;    // 'low' | 'high' | 'hidden' | null
 let trendChartInstance  = null;    // 趋势图 Chart 实例
 let pendingImportRows   = [];      // 待确认导入的数据行
 let _iCount             = 0;       // 管理员快捷键计数
@@ -1165,9 +1122,9 @@ let _iTimer             = null;    // 管理员快捷键计时器
 const ADMIN_PASSWORD = 'beiyuanbitan1902100607';
 const HMAC_SECRET    = 'hd_bynb_2025_secret_key';
 const SESSION_KEY    = 'hd_session';
-const WORKER_URL     = 'https://api.hongdiandata.com';
+const WORKER_URL = 'https://1413969452-8uv87lps3h.ap-guangzhou.tencentscf.com';
 const DATA_KEY       = 'hd_raw_data';
-let PAGE_SIZE        = 10;
+const PAGE_SIZE      = 10;
 const FAV_KEY        = 'hd_favourites';
 const CAT_STYLES = {
   "食品水果类": "cat-food",
@@ -1479,104 +1436,7 @@ function handleLogout() {
 
 
 
-const RAW_DATA = [
-  { id:1, category:"食品水果类", name:"每 油辣椒少油 很辣很香，三种辣度。好吃好吃，一定要尝一尝 一瓶 微辣", sales:15000, addCart:1000, buy24h:100, price:18.9, link:"https://xhslink.com/m/8NdYTv4xmds", store:"小红薯6977AE83的店", fans:104, commission:0, salesHistory:[{date:"2026-03-15",sales:15000}] },
-  { id:2, category:"食品水果类", name:"贵州特产柴火胡辣椒小包特辣手搓煳海椒蘸水 50g*1袋 贵州麻辣糊辣椒", sales:42000, addCart:100, buy24h:100, price:6.9, link:"https://xhslink.com/m/2mYqND61XXX", store:"小萍姐美食日记的店", fans:712, commission:0, salesHistory:[{date:"2026-03-15",sales:42000}] },
-  { id:3, category:"日化用品类", name:".1 广西横州冷泡茉莉花0糖0卡0香精0咖啡因配料表干净孕妇清爽解腻 「500箱限时破价」 白兰花水500ml*9瓶", sales:4423, addCart:4000, buy24h:100, price:29.9, link:"https://xhslink.com/m/4o5VhERTpYn", store:"广西茉莉大堂经理小明的店", fans:402, commission:0, salesHistory:[{date:"2026-03-15",sales:4423}] },
-  { id:4, category:"百货类", name:"纯棉全棉A类色织水洗棉简约纯色四件套学生宿舍三件套 绿密条 1.2床三件套被套150x200cm床单160x230cm", sales:111000, addCart:500, buy24h:100, price:105.0, link:"https://xhslink.com/m/8apfBLYYRwD", store:"执漫家居的店", fans:17000, commission:0, salesHistory:[{date:"2026-03-15",sales:111000}] },
-  { id:5, category:"配件首饰类", name:".97 韩系八爪鱼抓夹13cm五个颜色～ 棕色", sales:8518, addCart:400, buy24h:100, price:7.9, link:"https://xhslink.com/m/76k1NZxD8I2", store:"叮当星球的店", fans:784, commission:0, salesHistory:[{date:"2026-03-15",sales:8518}] },
-  { id:6, category:"食品水果类", name:"正宗小米蕉现摘小米蕉软糯香甜蕉新鲜产地直发", sales:5912, addCart:300, buy24h:100, price:6.6, link:"https://xhslink.com/m/3SHDm8TDQY", store:"鲜果到家的店", fans:100, commission:0, salesHistory:[{date:"2026-03-15",sales:5912}] },
-  { id:7, category:"食品水果类", name:"黔食锦 小包贵州特产糊辣椒面特辣手搓煳海椒蘸水 中辣 50g", sales:88000, addCart:1000, buy24h:100, price:6.9, link:"https://xhslink.com/m/ADXzYqC2c8u", store:"东方玖养的店", fans:62, commission:0, salesHistory:[{date:"2026-03-15",sales:88000}] },
-  { id:8, category:"食品水果类", name:".9 正宗水果玉米甜玉米新鲜生食玉米脆嫩甜产地直发 净重4 4.甜玉米到货18小时内放冰箱保鲜", sales:2898, addCart:600, buy24h:100, price:14.8, link:"https://xhslink.com/m/5RmYUvVTPrU", store:"小婉鲜果的店", fans:91, commission:0, salesHistory:[{date:"2026-03-15",sales:2898}] },
-  { id:9, category:"宠物用品类", name:"懒人猫草杯猫咪无土水培猫草吐毛球猫零食猫草 FZ 01猫草罐头！", sales:6450, addCart:200, buy24h:100, price:7.9, link:"https://xhslink.com/m/5OP0qWCzabW", store:"喵喵炸街的店", fans:3631, commission:0, salesHistory:[{date:"2026-03-15",sales:6450}] },
-  { id:10, category:"美妆类目", name:".2 「冷泡茉莉花」茉莉花水 天然茉莉花头段香 无香精无防腐剂0卡纯 1箱/9瓶", sales:15000, addCart:100, buy24h:100, price:28.8, link:"https://xhslink.com/m/92sxGxT41Om", store:"茉莉饮品-是雅芝呀yyzzzz的店", fans:3380, commission:0, salesHistory:[{date:"2026-03-15",sales:15000}] },
-  { id:11, category:"百货类", name:"雪花绒/棉麻儿童沙发懒人阅读座椅沙发椅亲肤 棉麻 黄色小号(三个月以内的宝宝拍）", sales:42000, addCart:100, buy24h:100, price:69.9, link:"https://xhslink.com/m/8xEYEorfnIA", store:"时光若芷的店", fans:2551, commission:0, salesHistory:[{date:"2026-03-15",sales:42000}] },
-  { id:12, category:"食品水果类", name:"正宗潮汕牛肉丸牛筋丸无添加手工制作潮汕特产 250g/包发顺丰 1.牛肉丸 1.牛筋丸 6包", sales:25000, addCart:200, buy24h:100, price:55.0, link:"https://xhslink.com/m/2mmzeMa4JRE", store:"壮壮爱吃牛的店", fans:1901, commission:0, salesHistory:[{date:"2026-03-15",sales:25000}] },
-  { id:13, category:"配件首饰类", name:"加大款香蕉夹香蕉夹抓夹后脑勺发卡高级感竖夹一字夹发饰女 奶油琥珀", sales:70000, addCart:400, buy24h:100, price:8.9, link:"https://xhslink.com/m/5KSlZRPE5jt", store:"漫曼日用的店", fans:1223, commission:0, salesHistory:[{date:"2026-03-15",sales:70000}] },
-  { id:14, category:"食品水果类", name:".9 山东临沂沂蒙山鸡师公炒鸡顺丰 半只鸡2.试吃装 不辣现杀现炒现发顺丰", sales:2706, addCart:100, buy24h:100, price:59.9, link:"https://xhslink.com/m/687L0RXGlAP", store:"临沂鸡师公炒鸡店的店", fans:1134, commission:0, salesHistory:[{date:"2026-03-15",sales:2706}] },
-  { id:15, category:"食品水果类", name:"羽衣甘蓝银耳八珍饼早餐代餐营养茶点 八珍银耳饼.300克/1袋", sales:206000, addCart:1000, buy24h:100, price:13.6, link:"https://xhslink.com/m/FG5CXfs8fX", store:"臻香阁m的店", fans:2693, commission:0, salesHistory:[{date:"2026-03-15",sales:206000}] },
-  { id:16, category:"保健养生类", name:".8 海南奇楠 千年心香 拍一发一", sales:25000, addCart:1000, buy24h:100, price:0.1, link:"https://xhslink.com/m/3Z0l7szLQ8z", store:"皇石文创的店", fans:364, commission:0, salesHistory:[{date:"2026-03-15",sales:25000}] },
-  { id:17, category:"宠物用品类", name:"冬季猫草猫草罐头适合冬天冬季生产无土猫草水培 1罐装", sales:29000, addCart:400, buy24h:100, price:9.9, link:"https://xhslink.com/m/7uI4o23SQaM", store:"Nipipet宠奈皮的店", fans:1243, commission:0, salesHistory:[{date:"2026-03-15",sales:29000}] },
-  { id:18, category:"百货类", name:".91 香菇公仔番茄蒲团坐垫毛绒玩具沙发靠垫床上抱枕礼物 黄洋柿子 直径25厘米", sales:43000, addCart:200, buy24h:100, price:7.99, link:"https://xhslink.com/m/3ecZxHy6Dtw", store:"一大碗土豆泥的店", fans:6016, commission:0, salesHistory:[{date:"2026-03-15",sales:43000}] },
-  { id:19, category:"食品水果类", name:"陕西绿心放软吃当季新鲜水果 徐香10枚，单果60 70g 收到需放软后食用", sales:600000, addCart:500, buy24h:100, price:11.9, link:"https://xhslink.com/m/67GIHFd5MxI", store:"果小乐的店", fans:6494, commission:0, salesHistory:[{date:"2026-03-15",sales:600000}] },
-  { id:20, category:"百货类", name:"其他 1碗1勺奶黄双耳南瓜碗勺陶瓷南瓜碗餐具饭碗早餐碗高颜值面碗甜品", sales:416, addCart:300, buy24h:100, price:21.99, link:"https://xhslink.com/m/A8pD8zUWdjO", store:"小收藏家～的店", fans:145, commission:0, salesHistory:[{date:"2026-03-15",sales:416}] },
-  { id:21, category:"食品水果类", name:"特大号青虾仁 新鲜手剥海虾仁 无保水剂添加 每份5包 多规格 大号5小包", sales:73000, addCart:2000, buy24h:100, price:76.0, link:"https://xhslink.com/m/97q1p2dGdSa", store:"海边东子的店", fans:8287, commission:0, salesHistory:[{date:"2026-03-15",sales:73000}] },
-  { id:22, category:"保健养生类", name:"工厂直发 三蒸三晒350g/瓶赤小豆薏米茯苓芡实茶 罐装/150g", sales:47000, addCart:700, buy24h:100, price:9.9, link:"https://xhslink.com/m/1fGcYMe4z7x", store:"小圆帽的店", fans:330, commission:0, salesHistory:[{date:"2026-03-15",sales:47000}] },
-  { id:23, category:"保健养生类", name:"每 东易宛艾 晚安贴睡眠贴 植物精油安眠贴 成人儿童安睡神奇 一盒装/买一赠一（轻度睡眠问题)", sales:3415, addCart:500, buy24h:100, price:19.9, link:"https://xhslink.com/m/9vodoaX6bom", store:"轻意甄选食养生活的店", fans:163, commission:0, salesHistory:[{date:"2026-03-15",sales:3415}] },
-  { id:24, category:"保健养生类", name:"175g*2两个眼包 省中医院同款中药敷眼包热奄包对视力干眼疲劳 疏通血气", sales:10000, addCart:700, buy24h:100, price:89.0, link:"https://xhslink.com/m/7c2dsTzGEg0", store:"闵桃桃食养的店", fans:184, commission:0, salesHistory:[{date:"2026-03-15",sales:10000}] },
-  { id:25, category:"保健养生类", name:".6 其他 苹果黄芪素颜水苹果黄芪枸杞茶黄芪红枣干姜组合装气皿茶泡水喝茶 苹果黄芪10包", sales:54000, addCart:200, buy24h:100, price:12.9, link:"https://xhslink.com/m/6pVscrd1TQF", store:"养生诗人的店", fans:8457, commission:0, salesHistory:[{date:"2026-03-15",sales:54000}] },
-  { id:26, category:"保健养生类", name:"紫光檀眼部小莲蓬按摩梳绿檀木羊角珠眼部按摩朱雀三啄棒 紫光檀 羊角珠小莲蓬配荷花袋", sales:13000, addCart:200, buy24h:100, price:19.8, link:"https://xhslink.com/m/46ucwPMhnNF", store:"爱读书的喵的店", fans:7616, commission:0, salesHistory:[{date:"2026-03-15",sales:13000}] },
-  { id:27, category:"食品水果类", name:"炒薏仁麸炒薏米炒熟即食正宗意米清香酥脆非油炸零食 炒薏仁100g", sales:123000, addCart:1000, buy24h:100, price:12.8, link:"https://xhslink.com/m/474pk8cPj4a", store:"妮同学的店", fans:1193, commission:0, salesHistory:[{date:"2026-03-15",sales:123000}] },
-  { id:28, category:"虚拟产品类", name:"金山文档 WPS超级会员svip一天1天临时ai会员模版个人简历pdf转换ppt模板 wps大会员 ai会员", sales:85000, addCart:100, buy24h:100, price:1.58, link:"https://xhslink.com/m/7w4mCcVu5RX", store:"超级会员WPS的店", fans:814, commission:0, salesHistory:[{date:"2026-03-15",sales:85000}] },
-  { id:29, category:"百货类", name:"水果干冻干果蔬脆零食混合苹果草莓芒果无花果 单独蔬菜混装 70g（没有根状香蕉??)", sales:49000, addCart:2000, buy24h:100, price:9.9, link:"https://xhslink.com/m/AzJGm5sdfR2", store:"嘎嘎嘣嘣的店", fans:8914, commission:0, salesHistory:[{date:"2026-03-15",sales:49000}] },
-  { id:30, category:"百货类", name:"凝胶记忆棉0.9m学生宿舍单人床垫寝室专用加厚海绵软褥垫子可折叠 可拆洗小蓝垫 5cm?终生质保 塌陷包赔 80x190cm宿舍床“0”压凝胶记忆棉 抗菌防螨", sales:18000, addCart:300, buy24h:100, price:108.0, link:"https://xhslink.com/m/44g4n9oXNDS", store:"FAFA财卖家纺的店", fans:886, commission:0, salesHistory:[{date:"2026-03-15",sales:18000}] },
-  { id:31, category:"百货类", name:"真的防塌！高密度海绵填充回弹学生床垫牛奶丝面料宿舍床垫 腊肠狗 布丁灰 0.8*1.9m 厚度5cm", sales:26000, addCart:100, buy24h:100, price:99.0, link:"https://xhslink.com/m/5dO6810OYbz", store:"可喜家纺的店", fans:695, commission:0, salesHistory:[{date:"2026-03-15",sales:26000}] },
-  { id:32, category:"配件首饰类", name:".8 粉丝专享 惊喜礼盒 粉丝专享 拍一发一", sales:66000, addCart:2000, buy24h:100, price:0.1, link:"https://xhslink.com/m/823j73LgN5Q", store:"CONQUISE（宠粉版）的店", fans:19000, commission:0, salesHistory:[{date:"2026-03-15",sales:66000}] },
-  { id:33, category:"美妆类目", name:"OTHER <喵喵指环系列> 小猫手指纹身贴女防水持久纹身贴彩色纹身贴可爱 B款2张12 只", sales:1436, addCart:100, buy24h:100, price:29.9, link:"https://xhslink.com/m/22ixD8XUrFV", store:"BUTOO STUDIO的店", fans:14000, commission:0, salesHistory:[{date:"2026-03-15",sales:1436}] },
-  { id:34, category:"宠物用品类", name:".2 猫咪饮水神器宠物自动喂水碗自动补水免滤芯清洁水源固定防倒 蓝色底座", sales:11000, addCart:300, buy24h:100, price:31.9, link:"https://xhslink.com/m/3Eml8jAoQ9f", store:"悠米BlissPet的店", fans:457, commission:0, salesHistory:[{date:"2026-03-15",sales:11000}] },
-  { id:35, category:"配件首饰类", name:"Glas 深空之蓝 新版纯银1mm极细青金石纹身感克莱因蓝戒指S925银 3mm银珠款 港码15码", sales:4347, addCart:600, buy24h:100, price:36.0, link:"https://xhslink.com/m/pZZWyZKSNI", store:"森秋SENTRAL的店", fans:6458, commission:0, salesHistory:[{date:"2026-03-15",sales:4347}] },
-  { id:36, category:"配件首饰类", name:"黄金首饰盒收纳盒防盗防金属探测仪隐藏式盲盒 盲盒3浅灰", sales:21000, addCart:100, buy24h:100, price:59.0, link:"https://xhslink.com/m/8UNTfnxERuu", store:"兔爸兔妈的店", fans:6043, commission:0, salesHistory:[{date:"2026-03-15",sales:21000}] },
-  { id:37, category:"摆件挂饰类", name:"每 OVO第二季兔兔纹身贴盲盒 16款 随机16款", sales:361, addCart:500, buy24h:100, price:29.9, link:"https://xhslink.com/m/C0EgDasG9D", store:"ovo的店", fans:21000, commission:0, salesHistory:[{date:"2026-03-15",sales:361}] },
-  { id:38, category:"绿植类", name:".8 水培玉兰花卉室内水培植物办公室净化空气 白色鲜切玉兰花 5枝55%顾客已购", sales:9588, addCart:1000, buy24h:100, price:15.2, link:"https://xhslink.com/m/5fZK9T8f6TN", store:"安小可花集的店", fans:175, commission:0, salesHistory:[{date:"2026-03-15",sales:9588}] },
-  { id:39, category:"虚拟产品类", name:".68 27考研英语外刊阅读 拍下查收短信发货哦", sales:18000, addCart:100, buy24h:100, price:34.32, link:"https://xhslink.com/m/4ANwCTpAFfs", store:"说瘦就瘦的店", fans:70000, commission:0, salesHistory:[{date:"2026-03-15",sales:18000}] },
-  { id:40, category:"虚拟产品类", name:".2 公考资料总汇4.0/国省考事业编、申论、行测、三色笔记、真题复盘 电子版真题", sales:4057, addCart:100, buy24h:100, price:8.8, link:"https://xhslink.com/m/ASTfGksTmJx", store:"上岸呀呀的店", fans:1220, commission:0, salesHistory:[{date:"2026-03-15",sales:4057}] },
-  { id:41, category:"数码设备类", name:"FUJIFILM 富士柯达插画一次性胶片相机 I 生日礼物 一起去音乐节 I 半格", sales:21000, addCart:400, buy24h:100, price:129.0, link:"https://xhslink.com/m/AOLtHx3CAEO", store:"DLA光影室的店", fans:776, commission:0, salesHistory:[{date:"2026-03-15",sales:21000}] },
-  { id:42, category:"百货类", name:"新款春夏秋冬四季薄脆本A4办公笔记本学生考试草稿纸高颜值错题本 冬树薄脆本 A4 90张180页", sales:49000, addCart:400, buy24h:100, price:8.8, link:"https://xhslink.com/m/HvkMOmbwHx", store:"时光小物社（仓库清仓）的店", fans:40000, commission:0, salesHistory:[{date:"2026-03-15",sales:49000}] },
-  { id:43, category:"百货类", name:"新款薄脆本A4高颜值小清新风笔记本学生商务办公练习本考研本 白色柠檬花薄脆本", sales:8390, addCart:100, buy24h:100, price:8.8, link:"https://xhslink.com/m/4nGgrGBAVTH", store:"时光小物社（仓库清仓）的店", fans:40000, commission:0, salesHistory:[{date:"2026-03-15",sales:8390}] },
-  { id:44, category:"百货类", name:"手工diy材料包干花压花信封亚克力相框创意生日礼物 胡桃色双面透明相框10寸(20.3*24.4cm）", sales:3336, addCart:100, buy24h:100, price:22.0, link:"https://xhslink.com/m/86NflSXOb0B", store:"一芝没有烦恼的店", fans:1523, commission:0, salesHistory:[{date:"2026-03-15",sales:3336}] },
-  { id:45, category:"食品水果类", name:"玛莎莉红薯榴莲蜜2026年新果～蒸烤两相宜～夏季冰箱冷藏 顺丰 玛莎莉红薯净重", sales:169000, addCart:400, buy24h:100, price:26.8, link:"https://xhslink.com/m/AAh2nENiiTr", store:"桃掌柜果蔬的店", fans:60000, commission:0, salesHistory:[{date:"2026-03-16",sales:169000}] },
-  { id:46, category:"百货类", name:"迷你蒸架多功能不锈钢蒸鸡蛋架养生壶小电锅隔热架厨房隔水蒸菜架 矮脚款 1个", sales:29000, addCart:200, buy24h:100, price:7.9, link:"https://xhslink.com/m/8Fe3gVO81qr", store:"七七醒醒的店", fans:1346, commission:0, salesHistory:[{date:"2026-03-16",sales:29000}] },
-  { id:47, category:"百货类", name:"宝盖头书夹12度透明书夹固定书本学生用支架资料夹 宝盖头书夹—蓝色 1个装", sales:2171, addCart:400, buy24h:100, price:9.9, link:"https://xhslink.com/m/13kzinUwz1y", store:"贝贝?的店", fans:149, commission:0, salesHistory:[{date:"2026-03-16",sales:2171}] },
-  { id:48, category:"食品水果类", name:"正宗沙瓤西红柿新鲜现摘甜水果农家现摘自然熟沙瓤西红柿新鲜蔬菜 带箱小果18个左右", sales:2890, addCart:800, buy24h:100, price:12.9, link:"https://xhslink.com/m/7JbUT4YshWx", store:"番茄慢食光的店", fans:68, commission:0, salesHistory:[{date:"2026-03-16",sales:2890}] },
-  { id:49, category:"食品水果类", name:".8 山东玉女黄瓜拇指脆甜爽口黄瓜清甜蔬菜孕妇水果代餐 玉女拇指黄瓜 现摘现发 坏果包赔", sales:6911, addCart:200, buy24h:100, price:9.8, link:"https://xhslink.com/m/3gftMHVTNHX", store:"小迟爱吃水果的店", fans:466, commission:0, salesHistory:[{date:"2026-03-16",sales:6911}] },
-  { id:50, category:"食品水果类", name:"头茬!东北黑土地玉米自然天成新鲜直发当季产地直供鲜果 8大棒一箱 纯黑土地玉米 透明袋铂金装随机发", sales:2659, addCart:200, buy24h:100, price:16.8, link:"https://xhslink.com/m/4tsEhlx9BgN", store:"糯糯小铺.的店", fans:19, commission:0, salesHistory:[{date:"2026-03-16",sales:2659}] },
-  { id:51, category:"日化用品类", name:".55 新店半价 侧柏叶草本洗发水养发护发蓬松当归无患子何首乌洗发水 500ml*1瓶装 4.0草本侧柏叶洗发水 配1个泵头", sales:11000, addCart:200, buy24h:100, price:25.9, link:"https://xhslink.com/m/3oizJpvE3f4", store:"发际线在逃公主??的店", fans:932, commission:0, salesHistory:[{date:"2026-03-16",sales:11000}] },
-  { id:52, category:"配件首饰类", name:".1 Cocoisland蓝色闪钻海豚发夹热带风可爱发卡 蓝色", sales:2319, addCart:200, buy24h:100, price:9.9, link:"https://xhslink.com/m/6oZRg85bUWP", store:"小岛椰cocoisland的店", fans:5369, commission:0, salesHistory:[{date:"2026-03-16",sales:2319}] },
-  { id:53, category:"食品水果类", name:"山东千层馒头老面发酵纯手工馍馍不加糖油150g/个 独立包装千层馒头150g/个*4", sales:121000, addCart:1000, buy24h:100, price:9.9, link:"https://xhslink.com/m/pvP3KmF4sX", store:"碳水研究所的店", fans:6399, commission:0, salesHistory:[{date:"2026-03-16",sales:121000}] },
-  { id:54, category:"日化用品类", name:".56 STILL小众高级香薰蜡烛送男女生闺蜜有意义的生日礼物 蜡烛款：英梨小苍兰 备注：姓名缩写/日期", sales:14000, addCart:3000, buy24h:100, price:77.44, link:"https://xhslink.com/m/9Qsr6t9Ftso", store:"still far的店", fans:43000, commission:0, salesHistory:[{date:"2026-03-16",sales:14000}] },
-  { id:55, category:"食品水果类", name:"唐山春雪水蜜桃脆甜多汁新鲜桃子果园直发 小果单果125g 量少不建议", sales:1767, addCart:1000, buy24h:100, price:19.9, link:"https://xhslink.com/m/2jIPWVwiCYh", store:"唐山桃子姐??的店", fans:129, commission:0, salesHistory:[{date:"2026-03-16",sales:1767}] },
-  { id:56, category:"健身器材类", name:"拉筋板斜踏板小腿瘦腿拉伸器运动拉筋神器站立健身压腿部辅助器材 11档樱花粉", sales:2000, addCart:100, buy24h:100, price:16.8, link:"https://xhslink.com/m/1mbC64BXPCk", store:"瑾yo的店", fans:2212, commission:0, salesHistory:[{date:"2026-03-16",sales:2000}] },
-  { id:57, category:"美妆类目", name:"其他 三合一开孔湿敷棉片可拉伸化妆棉补水敷脸专用 三合一湿敷棉210片", sales:10000, addCart:2000, buy24h:100, price:9.9, link:"https://xhslink.com/m/Yrt6ioACz7", store:"奶糖喵~的店", fans:281, commission:0, salesHistory:[{date:"2026-03-16",sales:10000}] },
-  { id:58, category:"健身器材类", name:"每 超慢跑指压板新升级液态软胶足底按摩垫 猫爪指压板 儿童款 珊瑚粉", sales:39000, addCart:200, buy24h:100, price:39.9, link:"https://xhslink.com/m/9fPmXsJrn5R", store:"浩云老舅「居家锻炼」的店", fans:401000, commission:0, salesHistory:[{date:"2026-03-16",sales:39000}] },
-  { id:59, category:"百货类", name:"OTHER 电脑手托架臂托鼠标护托键盘拖手托板架 一个装 红色可旋转款", sales:26000, addCart:500, buy24h:100, price:13.9, link:"https://xhslink.com/m/6pPI3cZGH4Q", store:"康合百货店的店", fans:97, commission:0, salesHistory:[{date:"2026-03-16",sales:26000}] },
-  { id:60, category:"服饰鞋包类", name:"Enjoy it乐在其中 压力小腿袜女专业运动健身跑步肌能压缩袜徒步骑行长筒袜 S0032深棕 均码 Enjoy it乐在其中", sales:42000, addCart:2000, buy24h:100, price:22.74, link:"https://xhslink.com/m/66SL4lm78O", store:"enjoy it旗舰店", fans:78000, commission:0, salesHistory:[{date:"2026-03-16",sales:42000}] },
-  { id:61, category:"健身器材类", name:"booooka咘咔负重手环二代可拆卸负重环负重沙袋健身隐形负重环 云舞白一对装入门日常手脚通用", sales:40000, addCart:600, buy24h:100, price:89.0, link:"https://xhslink.com/m/91Lg7d5wTLq", store:"booooka 轻曲线的店", fans:13000, commission:0, salesHistory:[{date:"2026-03-16",sales:40000}] },
-  { id:62, category:"食品水果类", name:"山东王林雀斑青苹果新鲜采摘酥甜多汁现摘现发酥脆口感不是硬脆 尝鲜试吃", sales:1776, addCart:300, buy24h:100, price:11.5, link:"https://xhslink.com/m/20FH8VGAuqv", store:"大莹果遇的店", fans:79, commission:0, salesHistory:[{date:"2026-03-16",sales:1776}] },
-  { id:63, category:"健身器材类", name:"液态硅胶指压板第八代全新升级双按摩球 液态指压板双球 紫色", sales:17000, addCart:100, buy24h:100, price:59.9, link:"https://xhslink.com/m/7BZ9QIFMQzo", store:"郑圆圆不圆（跟练闺蜜）的店", fans:1007, commission:0, salesHistory:[{date:"2026-03-16",sales:17000}] },
-  { id:64, category:"食品水果类", name:"芙山飘恋阿拉比卡袋装彩虹咖啡速溶黑咖啡提神醇香美 到手4盒共40袋 1包*1杯", sales:14000, addCart:300, buy24h:100, price:19.9, link:"https://xhslink.com/m/dn8jG1fD8j", store:"小苏低卡轻食记的店", fans:31000, commission:0, salesHistory:[{date:"2026-03-16",sales:14000}] },
-  { id:65, category:"百货类", name:"henricen 二代日本足弓支撑纠正鞋垫支撑减震平足支撑透气舒适柔软直腿神器 升级款卡其色 M码", sales:174000, addCart:4000, buy24h:100, price:29.0, link:"https://xhslink.com/m/79FGrDHc1qX", store:"橙耶服装的店", fans:2539, commission:0, salesHistory:[{date:"2026-03-16",sales:174000}] },
-  { id:66, category:"健身器材类", name:"女士哑铃实心铸铁骨头家用健身器械一对力量训练瘦手臂 深空蓝 总量1kg", sales:1123, addCart:100, buy24h:100, price:19.9, link:"https://xhslink.com/m/QiGKBw2a1n", store:"小重量女孩的店", fans:98, commission:0, salesHistory:[{date:"2026-03-16",sales:1123}] },
-  { id:67, category:"食品水果类", name:".1 坚果生巧燕麦脆黑巧克力轻食代餐健康零食 黑巧坚果燕麦1盒100g", sales:3787, addCart:1000, buy24h:100, price:8.8, link:"https://xhslink.com/m/6Jwlut0rNAl", store:"撑到扶墙走的店", fans:3081, commission:0, salesHistory:[{date:"2026-03-18",sales:3787}] },
-  { id:68, category:"食品水果类", name:"正宗美都麒麟西瓜大红瓤无籽甜脆多汁当季水果新鲜脆爽 5", sales:1534, addCart:400, buy24h:100, price:32.8, link:"https://xhslink.com/m/9mI4Hb1ZkF3", store:"呱呱大王??的店", fans:101, commission:0, salesHistory:[{date:"2026-03-18",sales:1534}] },
-  { id:69, category:"食品水果类", name:"云南蓝莓25号花香蓝莓抚仙湖蓝莓入口脆甜带花香风味 12 15mm 6盒/125g/盒 限时福利成本价", sales:2314, addCart:1000, buy24h:100, price:47.0, link:"https://xhslink.com/m/6OtIaZZS3CH", store:"鸡蛋家的店", fans:314, commission:0, salesHistory:[{date:"2026-03-18",sales:2314}] },
-  { id:70, category:"食品水果类", name:"云南小黄姜农家新鲜现挖食用生姜姜母嫩月子姜高山姜老姜 贵在运费", sales:17000, addCart:300, buy24h:100, price:6.8, link:"https://xhslink.com/m/1eoSAC9dqjT", store:"华仔高品质生鲜的店", fans:1352, commission:0, salesHistory:[{date:"2026-03-18",sales:17000}] },
-  { id:71, category:"食品水果类", name:"广西武鸣花皮沃柑当季水果皮薄肉厚爆甜多汁 十年老树花皮沃柑 花皮小果带箱", sales:18000, addCart:100, buy24h:100, price:9.8, link:"https://xhslink.com/m/2m6NngfSGUO", store:"贝贝在果园的店", fans:6340, commission:0, salesHistory:[{date:"2026-03-18",sales:18000}] },
-  { id:72, category:"保健养生类", name:"每", sales:6310, addCart:200, buy24h:100, price:29.9, link:"https://xhslink.com/m/zWUEuFfcSF", store:"晚阳食养的店", fans:11000, commission:0, salesHistory:[{date:"2026-03-18",sales:6310}] },
-  { id:73, category:"食品水果类", name:"软糯香甜紫薯紫罗兰农家自种口感细腻营养丰富无丝宝宝辅食孕妇可", sales:8844, addCart:100, buy24h:100, price:12.9, link:"https://xhslink.com/m/7fkKC3YmWCC", store:"薯你喜欢的店", fans:47, commission:0, salesHistory:[{date:"2026-03-18",sales:8844}] },
-  { id:74, category:"食品水果类", name:".6 一点红沙地冰激凌紫心番薯粉糯新鲜现挖 26年新果 冰激凌双色番薯 粉糯噎之王 冰激凌", sales:4766, addCart:300, buy24h:100, price:9.9, link:"https://xhslink.com/m/4Hq8n5v4KB1", store:"人间薯坊的店", fans:201, commission:0, salesHistory:[{date:"2026-03-18",sales:4766}] },
-  { id:75, category:"食品水果类", name:"甘肃天水花牛苹果新鲜水果粉面脆甜苹果当季现摘蛇果 小果", sales:14000, addCart:100, buy24h:100, price:9.8, link:"https://xhslink.com/m/6i5fjJ5livE", store:"果壹果贰生鲜的店", fans:393, commission:0, salesHistory:[{date:"2026-03-18",sales:14000}] },
-  { id:76, category:"食品水果类", name:"正宗贝贝南瓜干面粉糯板栗南瓜健康粗粮新鲜采摘产地直发整箱批发 4.5 小果", sales:1351, addCart:500, buy24h:100, price:14.9, link:"https://xhslink.com/m/2vOMWSdLYqe", store:"四季鲜果新农人的店", fans:216, commission:0, salesHistory:[{date:"2026-03-18",sales:1351}] },
-  { id:77, category:"食品水果类", name:"海南金钻凤梨！现摘现发！香甜多汁！海南热带新鲜水果！孕妇水果 中果2.5 亏本强推", sales:3318, addCart:800, buy24h:100, price:15.8, link:"https://xhslink.com/m/6zaxUPi6ZYV", store:"甜甜鲜果园～的店", fans:502, commission:0, salesHistory:[{date:"2026-03-18",sales:3318}] },
-  { id:78, category:"保健养生类", name:"胡医方 草本狐臭粉腋下净味 3克不划算", sales:13000, addCart:100, buy24h:100, price:6.9, link:"https://xhslink.com/m/3IvtM11eBV5", store:"民小仙的店", fans:428, commission:0, salesHistory:[{date:"2026-03-18",sales:13000}] },
-  { id:79, category:"食品水果类", name:"广西沃柑 现摘现发 广西沃柑果丑但甜 带箱4.6–小果", sales:8310, addCart:100, buy24h:100, price:8.8, link:"https://xhslink.com/m/16QORaipJ1H", store:"广西阿青的店", fans:1963, commission:0, salesHistory:[{date:"2026-03-18",sales:8310}] },
-  { id:80, category:"食品水果类", name:"50/100枚散养土鸡蛋绿壳乌鸡蛋农村正宗散养土鸡新鲜鸡蛋现捡现发 50枚开窝蛋", sales:11000, addCart:200, buy24h:100, price:47.88, link:"https://xhslink.com/m/6DdHHHsocJn", store:"农村养土鸡的店", fans:3792, commission:0, salesHistory:[{date:"2026-03-18",sales:11000}] },
-  { id:81, category:"食品水果类", name:"『红心牛奶木瓜』新鲜自然成熟热带水果现摘现发新鲜孕妇下奶 带箱 单果300g", sales:37000, addCart:8000, buy24h:100, price:8.6, link:"https://xhslink.com/m/2uLKiWa0tte", store:"甜甜的小果园的店", fans:160, commission:0, salesHistory:[{date:"2026-03-18",sales:37000}] },
-  { id:82, category:"食品水果类", name:"头茬!东北黑土地玉米自然天成新鲜直发当季产地直供鲜果 10大棒一箱 纯黑土地玉米 透明袋铂金装随机发", sales:5631, addCart:2000, buy24h:100, price:19.8, link:"https://xhslink.com/m/3CQsc2wxOtr", store:"自家果园的店", fans:222, commission:0, salesHistory:[{date:"2026-03-18",sales:5631}] },
-  { id:83, category:"宠物用品类", name:".83 9.9元随机10 赠1宠物零食不重样试吃装！猫狗鼠都可以吃！ 大个可复水鸡小胸1个装", sales:124000, addCart:300, buy24h:100, price:6.07, link:"https://xhslink.com/m/9MiSP9MaI9z", store:"冻干小食堂??（宠物零食）的店", fans:16000, commission:0, salesHistory:[{date:"2026-03-18",sales:124000}] },
-  { id:84, category:"数码设备类", name:"每 免插电摄像头监控门口家用手机远程入户无线室内外楼道 送终身免流量 无电无网 室外防水", sales:1099, addCart:100, buy24h:100, price:258.0, link:"https://xhslink.com/m/4KdYydUVzc", store:"汇万安防的店", fans:487, commission:0, salesHistory:[{date:"2026-03-18",sales:1099}] },
-  { id:85, category:"数码设备类", name:"每 免插电摄像头监控门口家用手机远程入户无线室内外楼道 送终身免流量 无电无网 室外防水", sales:1099, addCart:100, buy24h:100, price:258.0, link:"https://xhslink.com/m/5r0WmPXWspN", store:"汇万安防的店", fans:487, commission:0, salesHistory:[{date:"2026-03-18",sales:1099}] },
-  { id:86, category:"百货类", name:"新款夹棉床垫床护垫软席子褥子圆豆豆纱垫子防滑宿舍床垫四季通用 圆豆纱 浅蓝 48*74cm枕套一对", sales:18000, addCart:900, buy24h:100, price:24.0, link:"https://xhslink.com/m/37JQ2Zse5gZ", store:"优睡棉家纺的店", fans:1218, commission:0, salesHistory:[{date:"2026-03-18",sales:18000}] },
-  { id:87, category:"数码设备类", name:"Ebpfi手机后置自拍显示屏无线磁吸网红直播拍摄手机投屏远程拍照 白色", sales:5688, addCart:500, buy24h:100, price:19.0, link:"https://xhslink.com/m/39hZKBbCQmY", store:"迷妮种草酱甄选的店", fans:2091, commission:0, salesHistory:[{date:"2026-03-18",sales:5688}] },
-  { id:88, category:"百货类", name:"水果干冻干果蔬脆零食混合苹果芒果无花果 单独蔬菜混装 70g（没有根状香蕉??)", sales:51000, addCart:900, buy24h:100, price:9.9, link:"https://xhslink.com/m/9FvhkIHfUGU", store:"嘎嘎嘣嘣的店", fans:9124, commission:0, salesHistory:[{date:"2026-03-18",sales:51000}] },
-  { id:89, category:"配件首饰类", name:"古法工艺草本合香珠手串 非遗香方 花蕊夫人 8mm", sales:6758, addCart:800, buy24h:100, price:14.8, link:"https://xhslink.com/m/7Qvs6ErD2ce", store:"大韦手作工厂店的店", fans:2015, commission:0, salesHistory:[{date:"2026-03-18",sales:6758}] },
-  { id:90, category:"日化用品类", name:"香港真菌王止痒脚臭脱皮手足部位 50g/瓶子 到手1瓶", sales:26000, addCart:100, buy24h:100, price:9.9, link:"https://xhslink.com/m/7sXY6CHtvDN", store:"大果百货的店", fans:2618, commission:0, salesHistory:[{date:"2026-03-18",sales:26000}] },
-  { id:91, category:"食品水果类", name:"沐腊 四川烟熏麻辣香肠土猪肉风干腊肠腊肉腊排骨香肠广味 限500份麻辣香肠独立包装1根", sales:156000, addCart:100, buy24h:100, price:9.9, link:"https://xhslink.com/m/8OwlX5G82PA", store:"沐腊旗舰店", fans:22000, commission:0, salesHistory:[{date:"2026-03-18",sales:156000}] },
-  { id:92, category:"食品水果类", name:"小号九节虾干 即食烤虾仁 90 110只/斤 比较干 500g /包", sales:15000, addCart:100, buy24h:100, price:79.0, link:"https://xhslink.com/m/6pI8c8biqNL", store:"很爱吃??的人的店", fans:15000, commission:0, salesHistory:[{date:"2026-03-18",sales:15000}] },
-  { id:93, category:"绿植类", name:"鲜花绿植插花卉鲜切花醒花保鲜泡腾片 鲜花绿植专用????", sales:8344, addCart:100, buy24h:100, price:9.9, link:"https://xhslink.com/m/1Dq32IVpytD", store:"噗嗤噗嗤爱生活的店", fans:713, commission:0, salesHistory:[{date:"2026-03-18",sales:8344}] },
-  { id:94, category:"食品水果类", name:"手工原味红薯干不加糖倒蒸地瓜干香甜软糯有嚼劲孕妇儿童健康零食 原味红薯干450g*1袋", sales:4040, addCart:300, buy24h:100, price:15.9, link:"https://xhslink.com/m/8Cmv1vnWj4F", store:"拾薯记的店", fans:0, commission:0, salesHistory:[{date:"2026-03-18",sales:4040}] },
-  { id:95, category:"食品水果类", name:"加酸版酸梅粒无核厚切酸梅条桃梅肉蜜饯果脯酸爽零食 芒果话梅粒 1包100g", sales:259000, addCart:300, buy24h:100, price:9.9, link:"https://xhslink.com/m/9TLzCWpVq1x", store:"小爱糯叽叽果脯的店", fans:4873, commission:0, salesHistory:[{date:"2026-03-18",sales:259000}] },
-  { id:96, category:"食品水果类", name:"酸酸酸 农家无添加不加糖无核酸杏条 出行解馋春游零食 红杏条尝鲜装90克", sales:204000, addCart:200, buy24h:100, price:9.9, link:"https://xhslink.com/m/2ZHKd548A4D", store:"圆脸二姐的店", fans:29000, commission:0, salesHistory:[{date:"2026-03-18",sales:204000}] }
-];
+const RAW_DATA = [];
 
 // ── Boot ──────────────────────────────────────────────────
 function loadPersistedData() {
@@ -1601,9 +1461,12 @@ function persistData() {
   const el = document.getElementById('product-code-display');
   if (el) el.textContent = formatProductCode(DEVICE_FP);
 
+  // 清除旧的商品缓存，确保每次都从服务器拉最新数据
+  localStorage.removeItem(DATA_KEY);
+
   const session = loadSession();
   if (isSessionValid(session)) {
-    // 有有效会话，直接用本地数据先显示，然后后台拉最新数据
+    // 直接从服务器拉最新数据
     loadPersistedData();
     enterApp(session.role);
     // 后台静默更新
@@ -1665,20 +1528,20 @@ function renderKPIs() {
 
   // 低粉爆品：粉丝 < 500 且 24h加购 > 500（不限销量）
   const lowFansBoom = RAW_DATA.filter(d => {
-    const fansNum = Number(d.fans) || 0;
-    return fansNum <= 1000 && d.addCart >= 100;
+    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    return fansNum < 500 && d.addCart > 500;
   }).length;
 
   // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且 24h购买人数 > 100
   const hidden = RAW_DATA.filter(d => {
-    const fansNum = Number(d.fans) || 0;
-    return fansNum <= 1000 && d.addCart < 100 && (d.buy24h || 0) >= 100;
+    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    return fansNum < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
   }).length;
 
   // 高粉爆品：粉丝 > 5000 且 24h加购 > 500
   const highFansBoom = RAW_DATA.filter(d => {
-    const fansNum = Number(d.fans) || 0;
-    return fansNum >= 5000 && d.addCart >= 500;
+    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
+    return fansNum > 5000 && d.addCart > 500;
   }).length;
 
   document.getElementById('kpi-total').textContent = total;
@@ -1837,20 +1700,11 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
-  if (currentSignal) {
-    data = data.filter(d => {
-      const f = Number(d.fans) || 0;
-      if (currentSignal === 'low')    return f <= 1000 && d.addCart >= 100;
-      if (currentSignal === 'high')   return f >= 5000 && d.addCart >= 500;
-      if (currentSignal === 'hidden') return f <= 1000 && d.addCart < 100 && (d.buy24h || 0) >= 100;
-      return true;
-    });
-  }
   const sort = document.getElementById('sort-select').value;
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
     const f = item.fans;
-    return Number(f) || 0;
+    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
   };
   if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
   else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
@@ -1890,10 +1744,10 @@ function renderTable() {
     const rev = estimateRevenue(item);
     const barW = Math.round((item.sales / maxSales) * 100);
 
-    const fansNum = Number(item.fans) || 0;
-    const isLowFansBoom  = fansNum <= 1000 && item.addCart >= 100;
-    const isHighFansBoom = fansNum >= 5000 && item.addCart >= 500;
-    const isHidden       = fansNum <= 1000 && item.addCart < 100 && (item.buy24h || 0) >= 100;
+    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
+    const isLowFansBoom  = fansNum < 500 && item.addCart > 500;
+    const isHighFansBoom = fansNum > 5000 && item.addCart > 500;
+    const isHidden       = fansNum < 500 && item.addCart < 100 && (item.buy24h || 0) > 100;
 
     // 优先级：低粉爆品 > 隐藏潜力 > 高粉爆品
     const signalTag = isLowFansBoom
@@ -1917,8 +1771,7 @@ function renderTable() {
         <td><span class="category-tag ${catClass}">${(item.category === '美妆类目' || item.category === '美妆目') ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
-            <div class="product-name">${escHtml(item.name)}</div>
-            ${(signalTag || privateTag) ? '<div style="margin-top:4px;">' + signalTag + privateTag + '</div>' : ''}
+            <div class="product-name">${escHtml(item.name)}${signalTag}${privateTag}</div>
             <div class="store-name">${escHtml(item.store)}</div>
           </div>
         </td>
@@ -1931,11 +1784,10 @@ function renderTable() {
         <td><span class="add-to-cart">+${item.addCart.toLocaleString()}</span></td>
         <td><span style="font-family:var(--mono);font-size:12px;color:var(--purple)">${buy24hDisplay}</span></td>
         <td><span class="price-num">¥${item.price.toFixed(2)}</span></td>
-        <td><span class="fans-num">${(Number(item.fans) || 0).toLocaleString()}</span></td>
+        <td><span class="fans-num">${typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString()}</span></td>
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
         <td style="white-space:nowrap">
           <button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button>
-          ${currentRole === 'admin' ? '<button class="link-btn" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a;" onclick="event.stopPropagation();openEditModal(' + item.id + ')">✏️</button>' : ''}
           ${currentRole === 'admin' ? '<button class="link-btn del-btn" onclick="event.stopPropagation();deleteProduct(' + item.id + ')">🗑️</button>' : ''}
         </td>
       </tr>
@@ -1943,7 +1795,6 @@ function renderTable() {
   }).join('');
 
   renderPagination(total);
-  setTimeout(initBottomScrollbar, 50);
 }
 
 function renderPagination(total) {
@@ -1951,25 +1802,11 @@ function renderPagination(total) {
   const wrap = document.getElementById('pagination');
   if (pages <= 1) { wrap.innerHTML = ''; return; }
 
-  const btn = (i, label, active, disabled) =>
-    `<button class="page-btn ${active?'active':''}" onclick="goPage(${i})" ${disabled?'disabled':''}>${label}</button>`;
-  const ellipsis = `<span style="color:var(--text3);padding:0 4px;line-height:32px;">…</span>`;
-
-  let html = btn(currentPage - 1, '← 上一页', false, currentPage === 1);
-
-  if (pages <= 7) {
-    for (let i = 1; i <= pages; i++) html += btn(i, i, i === currentPage, false);
-  } else {
-    html += btn(1, 1, currentPage === 1, false);
-    if (currentPage > 3) html += ellipsis;
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(pages - 1, currentPage + 1); i++) {
-      html += btn(i, i, i === currentPage, false);
-    }
-    if (currentPage < pages - 2) html += ellipsis;
-    html += btn(pages, pages, currentPage === pages, false);
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← 上一页</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
   }
-
-  html += btn(currentPage + 1, '下一页 →', false, currentPage === pages);
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>下一页 →</button>`;
   wrap.innerHTML = html;
 }
 
@@ -1992,7 +1829,7 @@ function openModal(id) {
   if (!item) return;
   const rev = estimateRevenue(item);
   const catClass = CAT_STYLES[item.category] || 'cat-food';
-  const fansDisplay = (Number(item.fans) || 0).toLocaleString();
+  const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString();
 
   // Calculate week-over-week growth (last vs second-to-last in history)
   const hist = item.salesHistory;
@@ -2156,7 +1993,7 @@ function exportToExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格','店铺粉丝','预估GMV','商品链接'];
   const rows = data.map((item, idx) => {
     const gmv = estimateRevenue(item);
-    const fansDisplay = (Number(item.fans) || 0).toLocaleString();
+    const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans;
     return [
       idx + 1,
       item.category,
@@ -2611,31 +2448,6 @@ function updateMonitorBtn() {
 }
 // ── End Monitor Filter ────────────────────────────────────
 
-// ── Signal Filter ────────────────────────────────────────
-function toggleSignalFilter(signal) {
-  const cards = { low: 'kpi-card-low', high: 'kpi-card-high', hidden: 'kpi-card-hidden' };
-  const colors = { low: '#00c9a7', high: '#ffd60a', hidden: '#bf5af2' };
-
-  if (currentSignal === signal) {
-    // 取消筛选
-    currentSignal = null;
-    Object.values(cards).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.borderColor = '';
-    });
-  } else {
-    // 切换到新筛选
-    currentSignal = signal;
-    Object.entries(cards).forEach(([key, id]) => {
-      const el = document.getElementById(id);
-      if (el) el.style.borderColor = key === signal ? colors[signal] : '';
-    });
-  }
-  currentPage = 1;
-  renderTable();
-}
-// ── End Signal Filter ─────────────────────────────────────
-
 // ── Delete Product ────────────────────────────────────────
 function deleteProduct(id) {
   const item = RAW_DATA.find(d => d.id === id);
@@ -2664,86 +2476,6 @@ function deleteProduct(id) {
   .catch(err => alert('网络错误：' + err.message));
 }
 // ── End Delete Product ────────────────────────────────────
-// ── Edit Product ─────────────────────────────────────────
-function openEditModal(id) {
-  const item = RAW_DATA.find(d => d.id === id);
-  if (!item) return;
-  const overlay = document.getElementById('edit-modal-overlay');
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-name').value = item.name || '';
-  document.getElementById('edit-category').value = item.category || '';
-  document.getElementById('edit-store').value = item.store || '';
-  document.getElementById('edit-price').value = item.price || '';
-  document.getElementById('edit-sales').value = item.sales || '';
-  document.getElementById('edit-addCart').value = item.addCart || '';
-  document.getElementById('edit-buy24h').value = item.buy24h || '';
-  document.getElementById('edit-fans').value = item.fans || '';
-  document.getElementById('edit-link').value = item.link || '';
-  overlay.style.display = 'flex';
-}
-
-function closeEditModal() {
-  document.getElementById('edit-modal-overlay').style.display = 'none';
-}
-
-async function saveEdit() {
-  const id = parseInt(document.getElementById('edit-id').value);
-  const item = RAW_DATA.find(d => d.id === id);
-  if (!item) return;
-
-  const updated = {
-    ...item,
-    name:     document.getElementById('edit-name').value.trim(),
-    category: document.getElementById('edit-category').value.trim(),
-    store:    document.getElementById('edit-store').value.trim(),
-    price:    parseFloat(document.getElementById('edit-price').value) || item.price,
-    sales:    parseInt(document.getElementById('edit-sales').value) || item.sales,
-    addCart:  parseInt(document.getElementById('edit-addCart').value) || 0,
-    buy24h:   parseInt(document.getElementById('edit-buy24h').value) || 0,
-    fans:     parseInt(document.getElementById('edit-fans').value) || 0,
-    link:     document.getElementById('edit-link').value.trim(),
-  };
-
-  const btn = document.getElementById('edit-save-btn');
-  btn.disabled = true;
-  btn.textContent = '保存中…';
-
-  try {
-    // 用专用edit接口强制覆盖所有字段
-    const fields = {
-      name:        updated.name,
-      category:    updated.category,
-      store:       updated.store,
-      price:       updated.price,
-      sales:       updated.sales,
-      addCart:     updated.addCart,
-      buy24h:      updated.buy24h,
-      fans:        updated.fans,
-      link:        updated.link,
-      submittedBy: updated.submittedBy || '',
-    };
-    const res = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, fields }),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || '保存失败');
-    // 更新内存
-    const idx = RAW_DATA.findIndex(d => d.id === id);
-    if (idx !== -1) RAW_DATA[idx] = updated;
-    closeEditModal();
-    renderTable();
-    renderKPIs();
-  } catch(err) {
-    alert('保存失败：' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 保存';
-  }
-}
-// ── End Edit Product ──────────────────────────────────────
-
 function exportExcel() {
   const filtered = getFiltered();
   const maxSales = Math.max(...RAW_DATA.map(d => d.sales));
@@ -2753,12 +2485,12 @@ function exportExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','24h购买人数','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
 
   const rows = filtered.map((item, idx) => {
-    const fansNum = Number(item.fans) || 0;
-    const isLowFansBoom = fansNum <= 1000 && item.addCart >= 100;
-    const isHidden      = fansNum <= 1000 && item.addCart < 100 && (item.buy24h || 0) >= 100;
+    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
+    const isLowFansBoom = fansNum < 500 && item.addCart > 500;
+    const isHidden      = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
     const signal = isLowFansBoom ? '💥低粉爆品' : isHidden ? '🌱隐藏潜力' : '';
     const gmv = (item.sales * item.price).toFixed(0);
-    const fans = Number(item.fans) || 0;
+    const fans = typeof item.fans === 'number' && item.fans < 10 ? item.fans + 'w' : item.fans;
 
     return [
       idx + 1,
@@ -2776,8 +2508,7 @@ function exportExcel() {
     ].join(',');
   });
 
-  const brandRow = '数据来源：hongdiandata.com（红点数据）/ 公众号：北苑笔谈';
-  const csv = BOM + brandRow + '\n' + headers.join(',') + '\n' + rows.join('\n');
+  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -3040,23 +2771,6 @@ function renderScoreList() {
   }).join('');
 }
 // ── End 选品评分系统 ──────────────────────────────────────
-
-// ── 底部横向滚动条同步 ────────────────────────────────────
-let _scrollbarInited = false;
-function initBottomScrollbar() {
-  const wrap = document.getElementById('table-wrap');
-  const barWrap = document.getElementById('bottom-scrollbar-wrap');
-  const barInner = document.getElementById('bottom-scrollbar-inner');
-  if (!wrap || !barWrap || !barInner) return;
-  function syncWidth() { barInner.style.width = wrap.scrollWidth + 'px'; }
-  syncWidth();
-  if (!_scrollbarInited) {
-    barWrap.addEventListener('scroll', () => { wrap.scrollLeft = barWrap.scrollLeft; });
-    wrap.addEventListener('scroll', () => { barWrap.scrollLeft = wrap.scrollLeft; });
-    _scrollbarInited = true;
-  }
-}
-// ── End 底部横向滚动条 ────────────────────────────────────
 
 </script>
 
