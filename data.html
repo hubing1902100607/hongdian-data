@@ -330,7 +330,7 @@
   }
 
   .table-wrap {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   table {
@@ -922,7 +922,7 @@
     <div class="kpi-card" id="kpi-card-hidden" onclick="toggleSignalFilter('hidden')" style="cursor:pointer;transition:border-color .2s;">
       <div class="kpi-label">🌱 隐藏潜力品</div>
       <div class="kpi-value" id="kpi-hidden">—</div>
-      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 &lt;100 · 24h购买 ≥100</div>
+      <div class="kpi-desc">粉丝 ≤1000 · 24h加购 <100 · 24h购买 ≥100</div>
     </div>
   </div>
 
@@ -968,6 +968,12 @@
       <option value="revenue">按预估GMV排序</option>
       <option value="fans">按粉丝数排序</option>
     </select>
+    <select onchange="PAGE_SIZE=parseInt(this.value);currentPage=1;filterAndRender()" style="background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 10px;color:#9090a8;font-size:12px;outline:none;cursor:pointer;">
+      <option value="10">每页10条</option>
+      <option value="20">每页20条</option>
+      <option value="30">每页30条</option>
+      <option value="50">每页50条</option>
+    </select>
     <div class="results-count" id="results-count"></div>
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
@@ -977,7 +983,7 @@
 
   <!-- Table -->
   <div class="table-card">
-    <div class="table-wrap">
+    <div class="table-wrap" id="table-wrap">
       <table>
         <thead>
           <tr>
@@ -999,8 +1005,44 @@
     </div>
     <div class="pagination" id="pagination"></div>
   </div>
+  <!-- 底部横向滚动条 -->
+  <div id="bottom-scrollbar-wrap" style="overflow-x:auto;overflow-y:hidden;height:14px;background:var(--card);border:1px solid var(--border);border-radius:0 0 14px 14px;margin-top:-1px;">
+    <div id="bottom-scrollbar-inner" style="height:1px;"></div>
+  </div>
 </main>
 
+
+<!-- Edit Modal -->
+<div id="edit-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#16161f;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:15px;font-weight:500;">✏️ 编辑商品</div>
+      <button onclick="closeEditModal()" style="background:none;border:none;color:#9090a8;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="edit-id">
+    <div style="display:grid;gap:12px;">
+      <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">商品名称</div><input id="edit-name" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">类目</div><input id="edit-category" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">店铺名称</div><input id="edit-store" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">价格 (¥)</div><input id="edit-price" type="number" step="0.01" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">销量</div><input id="edit-sales" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">24h加购</div><input id="edit-addCart" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">24h购买</div><input id="edit-buy24h" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+        <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">店铺粉丝</div><input id="edit-fans" type="number" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+      </div>
+      <div><div style="font-size:11px;color:#9090a8;margin-bottom:4px;">商品链接</div><input id="edit-link" style="width:100%;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 12px;color:#e8e8f0;font-size:13px;outline:none;"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeEditModal()" style="padding:10px 20px;background:#1a1a24;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#9090a8;font-size:13px;cursor:pointer;">取消</button>
+      <button id="edit-save-btn" onclick="saveEdit()" style="padding:10px 20px;background:#ffd60a;border:none;border-radius:8px;color:#000;font-size:13px;font-weight:500;cursor:pointer;">💾 保存</button>
+    </div>
+  </div>
+</div>
 <!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
@@ -1123,7 +1165,7 @@ let _iTimer             = null;    // 管理员快捷键计时器
 const ADMIN_PASSWORD = 'beiyuanbitan1902100607';
 const HMAC_SECRET    = 'hd_bynb_2025_secret_key';
 const SESSION_KEY    = 'hd_session';
-const WORKER_URL = 'https://1413969452-8uv87lps3h.ap-guangzhou.tencentscf.com';
+const WORKER_URL     = 'https://api.hongdiandata.com';
 const DATA_KEY       = 'hd_raw_data';
 const PAGE_SIZE      = 10;
 const FAV_KEY        = 'hd_favourites';
@@ -1462,12 +1504,9 @@ function persistData() {
   const el = document.getElementById('product-code-display');
   if (el) el.textContent = formatProductCode(DEVICE_FP);
 
-  // 清除旧的商品缓存，确保每次都从服务器拉最新数据
-  localStorage.removeItem(DATA_KEY);
-
   const session = loadSession();
   if (isSessionValid(session)) {
-    // 直接从服务器拉最新数据
+    // 有有效会话，直接用本地数据先显示，然后后台拉最新数据
     loadPersistedData();
     enterApp(session.role);
     // 后台静默更新
@@ -1529,49 +1568,26 @@ function renderKPIs() {
 
   // 低粉爆品：粉丝 < 500 且 24h加购 > 500（不限销量）
   const lowFansBoom = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
-    return fansNum < 500 && d.addCart > 500;
+    const fansNum = Number(d.fans) || 0;
+    return fansNum <= 1000 && d.addCart >= 100;
   }).length;
 
   // 隐藏潜力品：粉丝 < 500 且 24h加购 < 100 且 24h购买人数 > 100
   const hidden = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
-    return fansNum < 500 && d.addCart < 100 && (d.buy24h || 0) > 100;
+    const fansNum = Number(d.fans) || 0;
+    return fansNum <= 1000 && d.addCart < 100 && (d.buy24h || 0) >= 100;
   }).length;
 
   // 高粉爆品：粉丝 > 5000 且 24h加购 > 500
   const highFansBoom = RAW_DATA.filter(d => {
-    const fansNum = typeof d.fans === 'number' && d.fans < 10 ? d.fans * 10000 : Number(d.fans);
-    return fansNum > 5000 && d.addCart > 500;
+    const fansNum = Number(d.fans) || 0;
+    return fansNum >= 5000 && d.addCart >= 500;
   }).length;
 
   document.getElementById('kpi-total').textContent = total;
   document.getElementById('kpi-low-fans').textContent = lowFansBoom;
   document.getElementById('kpi-high-fans').textContent = highFansBoom;
   document.getElementById('kpi-hidden').textContent = hidden;
-}
-
-function toggleSignalFilter(signal) {
-  const cards  = { low: 'kpi-card-low', high: 'kpi-card-high', hidden: 'kpi-card-hidden' };
-  const colors = { low: '#00c9a7', high: '#ffd60a', hidden: '#bf5af2' };
-
-  if (currentSignal === signal) {
-    // 取消筛选
-    currentSignal = null;
-    Object.values(cards).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.borderColor = '';
-    });
-  } else {
-    // 切换到新筛选
-    currentSignal = signal;
-    Object.entries(cards).forEach(([key, id]) => {
-      const el = document.getElementById(id);
-      if (el) el.style.borderColor = key === signal ? colors[signal] : '';
-    });
-  }
-  currentPage = 1;
-  renderTable();
 }
 
 // Charts
@@ -1724,7 +1740,6 @@ function getFiltered() {
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
   if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
-  // KPI快捷筛选
   if (currentSignal) {
     data = data.filter(d => {
       const f = Number(d.fans) || 0;
@@ -1738,7 +1753,7 @@ function getFiltered() {
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
     const f = item.fans;
-    return (typeof f === 'number' && f < 10) ? f * 10000 : (Number(f) || 0);
+    return Number(f) || 0;
   };
   if (sort === 'sales') data.sort((a,b) => d * (b.sales - a.sales));
   else if (sort === 'addCart') data.sort((a,b) => d * (b.addCart - a.addCart));
@@ -1778,10 +1793,10 @@ function renderTable() {
     const rev = estimateRevenue(item);
     const barW = Math.round((item.sales / maxSales) * 100);
 
-    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
-    const isLowFansBoom  = fansNum < 500 && item.addCart > 500;
-    const isHighFansBoom = fansNum > 5000 && item.addCart > 500;
-    const isHidden       = fansNum < 500 && item.addCart < 100 && (item.buy24h || 0) > 100;
+    const fansNum = Number(item.fans) || 0;
+    const isLowFansBoom  = fansNum <= 1000 && item.addCart >= 100;
+    const isHighFansBoom = fansNum >= 5000 && item.addCart >= 500;
+    const isHidden       = fansNum <= 1000 && item.addCart < 100 && (item.buy24h || 0) >= 100;
 
     // 优先级：低粉爆品 > 隐藏潜力 > 高粉爆品
     const signalTag = isLowFansBoom
@@ -1805,7 +1820,8 @@ function renderTable() {
         <td><span class="category-tag ${catClass}">${(item.category === '美妆类目' || item.category === '美妆目') ? '美妆' : item.category}</span></td>
         <td>
           <div class="product-name-wrap">
-            <div class="product-name">${escHtml(item.name)}${signalTag}${privateTag}</div>
+            <div class="product-name">${escHtml(item.name)}</div>
+            ${(signalTag || privateTag) ? '<div style="margin-top:4px;">' + signalTag + privateTag + '</div>' : ''}
             <div class="store-name">${escHtml(item.store)}</div>
           </div>
         </td>
@@ -1818,10 +1834,11 @@ function renderTable() {
         <td><span class="add-to-cart">+${item.addCart.toLocaleString()}</span></td>
         <td><span style="font-family:var(--mono);font-size:12px;color:var(--purple)">${buy24hDisplay}</span></td>
         <td><span class="price-num">¥${item.price.toFixed(2)}</span></td>
-        <td><span class="fans-num">${typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString()}</span></td>
+        <td><span class="fans-num">${(Number(item.fans) || 0).toLocaleString()}</span></td>
         <td><span class="est-revenue">${fmtY(rev)}</span></td>
         <td style="white-space:nowrap">
           <button class="link-btn" onclick="event.stopPropagation();openLink('${item.link}')">🔗 查看</button>
+          ${currentRole === 'admin' ? '<button class="link-btn" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a;" onclick="event.stopPropagation();openEditModal(' + item.id + ')">✏️</button>' : ''}
           ${currentRole === 'admin' ? '<button class="link-btn del-btn" onclick="event.stopPropagation();deleteProduct(' + item.id + ')">🗑️</button>' : ''}
         </td>
       </tr>
@@ -1829,6 +1846,7 @@ function renderTable() {
   }).join('');
 
   renderPagination(total);
+  setTimeout(initBottomScrollbar, 50);
 }
 
 function renderPagination(total) {
@@ -1836,11 +1854,25 @@ function renderPagination(total) {
   const wrap = document.getElementById('pagination');
   if (pages <= 1) { wrap.innerHTML = ''; return; }
 
-  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← 上一页</button>`;
-  for (let i = 1; i <= pages; i++) {
-    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  const btn = (i, label, active, disabled) =>
+    `<button class="page-btn ${active?'active':''}" onclick="goPage(${i})" ${disabled?'disabled':''}>${label}</button>`;
+  const ellipsis = `<span style="color:var(--text3);padding:0 4px;line-height:32px;">…</span>`;
+
+  let html = btn(currentPage - 1, '← 上一页', false, currentPage === 1);
+
+  if (pages <= 7) {
+    for (let i = 1; i <= pages; i++) html += btn(i, i, i === currentPage, false);
+  } else {
+    html += btn(1, 1, currentPage === 1, false);
+    if (currentPage > 3) html += ellipsis;
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(pages - 1, currentPage + 1); i++) {
+      html += btn(i, i, i === currentPage, false);
+    }
+    if (currentPage < pages - 2) html += ellipsis;
+    html += btn(pages, pages, currentPage === pages, false);
   }
-  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>下一页 →</button>`;
+
+  html += btn(currentPage + 1, '下一页 →', false, currentPage === pages);
   wrap.innerHTML = html;
 }
 
@@ -1863,7 +1895,7 @@ function openModal(id) {
   if (!item) return;
   const rev = estimateRevenue(item);
   const catClass = CAT_STYLES[item.category] || 'cat-food';
-  const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans.toLocaleString();
+  const fansDisplay = (Number(item.fans) || 0).toLocaleString();
 
   // Calculate week-over-week growth (last vs second-to-last in history)
   const hist = item.salesHistory;
@@ -2027,7 +2059,7 @@ function exportToExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','价格','店铺粉丝','预估GMV','商品链接'];
   const rows = data.map((item, idx) => {
     const gmv = estimateRevenue(item);
-    const fansDisplay = typeof item.fans === 'number' && item.fans < 10 ? (item.fans + 'w') : item.fans;
+    const fansDisplay = (Number(item.fans) || 0).toLocaleString();
     return [
       idx + 1,
       item.category,
@@ -2482,6 +2514,31 @@ function updateMonitorBtn() {
 }
 // ── End Monitor Filter ────────────────────────────────────
 
+// ── Signal Filter ────────────────────────────────────────
+function toggleSignalFilter(signal) {
+  const cards = { low: 'kpi-card-low', high: 'kpi-card-high', hidden: 'kpi-card-hidden' };
+  const colors = { low: '#00c9a7', high: '#ffd60a', hidden: '#bf5af2' };
+
+  if (currentSignal === signal) {
+    // 取消筛选
+    currentSignal = null;
+    Object.values(cards).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.borderColor = '';
+    });
+  } else {
+    // 切换到新筛选
+    currentSignal = signal;
+    Object.entries(cards).forEach(([key, id]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.borderColor = key === signal ? colors[signal] : '';
+    });
+  }
+  currentPage = 1;
+  renderTable();
+}
+// ── End Signal Filter ─────────────────────────────────────
+
 // ── Delete Product ────────────────────────────────────────
 function deleteProduct(id) {
   const item = RAW_DATA.find(d => d.id === id);
@@ -2510,6 +2567,86 @@ function deleteProduct(id) {
   .catch(err => alert('网络错误：' + err.message));
 }
 // ── End Delete Product ────────────────────────────────────
+// ── Edit Product ─────────────────────────────────────────
+function openEditModal(id) {
+  const item = RAW_DATA.find(d => d.id === id);
+  if (!item) return;
+  const overlay = document.getElementById('edit-modal-overlay');
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = item.name || '';
+  document.getElementById('edit-category').value = item.category || '';
+  document.getElementById('edit-store').value = item.store || '';
+  document.getElementById('edit-price').value = item.price || '';
+  document.getElementById('edit-sales').value = item.sales || '';
+  document.getElementById('edit-addCart').value = item.addCart || '';
+  document.getElementById('edit-buy24h').value = item.buy24h || '';
+  document.getElementById('edit-fans').value = item.fans || '';
+  document.getElementById('edit-link').value = item.link || '';
+  overlay.style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').style.display = 'none';
+}
+
+async function saveEdit() {
+  const id = parseInt(document.getElementById('edit-id').value);
+  const item = RAW_DATA.find(d => d.id === id);
+  if (!item) return;
+
+  const updated = {
+    ...item,
+    name:     document.getElementById('edit-name').value.trim(),
+    category: document.getElementById('edit-category').value.trim(),
+    store:    document.getElementById('edit-store').value.trim(),
+    price:    parseFloat(document.getElementById('edit-price').value) || item.price,
+    sales:    parseInt(document.getElementById('edit-sales').value) || item.sales,
+    addCart:  parseInt(document.getElementById('edit-addCart').value) || 0,
+    buy24h:   parseInt(document.getElementById('edit-buy24h').value) || 0,
+    fans:     parseInt(document.getElementById('edit-fans').value) || 0,
+    link:     document.getElementById('edit-link').value.trim(),
+  };
+
+  const btn = document.getElementById('edit-save-btn');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  try {
+    // 用专用edit接口强制覆盖所有字段
+    const fields = {
+      name:        updated.name,
+      category:    updated.category,
+      store:       updated.store,
+      price:       updated.price,
+      sales:       updated.sales,
+      addCart:     updated.addCart,
+      buy24h:      updated.buy24h,
+      fans:        updated.fans,
+      link:        updated.link,
+      submittedBy: updated.submittedBy || '',
+    };
+    const res = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, fields }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '保存失败');
+    // 更新内存
+    const idx = RAW_DATA.findIndex(d => d.id === id);
+    if (idx !== -1) RAW_DATA[idx] = updated;
+    closeEditModal();
+    renderTable();
+    renderKPIs();
+  } catch(err) {
+    alert('保存失败：' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 保存';
+  }
+}
+// ── End Edit Product ──────────────────────────────────────
+
 function exportExcel() {
   const filtered = getFiltered();
   const maxSales = Math.max(...RAW_DATA.map(d => d.sales));
@@ -2519,12 +2656,12 @@ function exportExcel() {
   const headers = ['排名','类目','商品名称','店铺名称','商品销量','24h加购','24h购买人数','价格(¥)','店铺粉丝','预估GMV(¥)','商品链接','信号标签'];
 
   const rows = filtered.map((item, idx) => {
-    const fansNum = typeof item.fans === 'number' && item.fans < 10 ? item.fans * 10000 : Number(item.fans);
-    const isLowFansBoom = fansNum < 500 && item.addCart > 500;
-    const isHidden      = fansNum < 500 && item.addCart < 100 && (item.sales / 30) > 100;
+    const fansNum = Number(item.fans) || 0;
+    const isLowFansBoom = fansNum <= 1000 && item.addCart >= 100;
+    const isHidden      = fansNum <= 1000 && item.addCart < 100 && (item.buy24h || 0) >= 100;
     const signal = isLowFansBoom ? '💥低粉爆品' : isHidden ? '🌱隐藏潜力' : '';
     const gmv = (item.sales * item.price).toFixed(0);
-    const fans = typeof item.fans === 'number' && item.fans < 10 ? item.fans + 'w' : item.fans;
+    const fans = Number(item.fans) || 0;
 
     return [
       idx + 1,
@@ -2542,7 +2679,8 @@ function exportExcel() {
     ].join(',');
   });
 
-  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const brandRow = '数据来源：hongdiandata.com（红点数据）/ 公众号：北苑笔谈';
+  const csv = BOM + brandRow + '\n' + headers.join(',') + '\n' + rows.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -2805,6 +2943,23 @@ function renderScoreList() {
   }).join('');
 }
 // ── End 选品评分系统 ──────────────────────────────────────
+
+// ── 底部横向滚动条同步 ────────────────────────────────────
+let _scrollbarInited = false;
+function initBottomScrollbar() {
+  const wrap = document.getElementById('table-wrap');
+  const barWrap = document.getElementById('bottom-scrollbar-wrap');
+  const barInner = document.getElementById('bottom-scrollbar-inner');
+  if (!wrap || !barWrap || !barInner) return;
+  function syncWidth() { barInner.style.width = wrap.scrollWidth + 'px'; }
+  syncWidth();
+  if (!_scrollbarInited) {
+    barWrap.addEventListener('scroll', () => { wrap.scrollLeft = barWrap.scrollLeft; });
+    wrap.addEventListener('scroll', () => { barWrap.scrollLeft = wrap.scrollLeft; });
+    _scrollbarInited = true;
+  }
+}
+// ── End 底部横向滚动条 ────────────────────────────────────
 
 </script>
 
