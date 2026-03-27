@@ -1355,7 +1355,7 @@ function tryLogin() {
 
 function loadProductsAndEnter(role, code) {
   const auth = role === 'admin' ? ADMIN_PASSWORD : (code || '');
-  fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth))
+  fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth) + '&fp=' + encodeURIComponent(DEVICE_FP))
   .then(r => r.json())
   .then(data => {
     if (data.ok && data.products && data.products.length) {
@@ -1635,7 +1635,7 @@ function fetchLatestProducts(session, retryCount) {
   const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
 
   fetchWithTimeout(
-    WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth),
+    WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth) + '&fp=' + encodeURIComponent(DEVICE_FP),
     10000
   )
   .then(r => {
