@@ -2098,7 +2098,8 @@ function openModal(id) {
     if (i === 0) return null;
     const diff = v - values[i-1];
     const pct = ((diff / values[i-1]) * 100).toFixed(1);
-    return { diff, pct };
+    const gmvDiff = diff * item.price;
+    return { diff, pct, gmvDiff };
   });
 
   trendChartInstance = new Chart(ctx, {
@@ -2152,7 +2153,15 @@ function openModal(id) {
               const wow = wowChanges[i];
               const arrow = wow.diff >= 0 ? '↑' : '↓';
               const sign = wow.diff >= 0 ? '+' : '';
-              return `${arrow} 环比上周 ${sign}${wow.diff.toLocaleString()} 件 (${sign}${wow.pct}%)`;
+              const gmvSign = wow.gmvDiff >= 0 ? '+' : '';
+              const gmvAbs = Math.abs(wow.gmvDiff);
+              const gmvStr = gmvAbs >= 10000
+                ? gmvSign + '¥' + (wow.gmvDiff / 10000).toFixed(2) + 'W'
+                : gmvSign + '¥' + wow.gmvDiff.toFixed(0);
+              return [
+                `${arrow} 环比上周 ${sign}${wow.diff.toLocaleString()} 件 (${sign}${wow.pct}%)`,
+                `💰 GMV 增量 ${gmvStr}`
+              ];
             }
           }
         }
