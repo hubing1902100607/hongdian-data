@@ -444,11 +444,7 @@ footer a { color: var(--text3); text-decoration: none; }
 
 <div class="hero">
   <div class="hero-tag">🔥 小红书爆款选品情报</div>
-  <div class="hero-titles" id="hero-titles">
-    <div class="hero-title-item active">不看数据就决策<br>是在用时间<span>赌运气</span></div>
-    <div class="hero-title-item">选错一个品<br><span>白忙一个月</span></div>
-    <div class="hero-title-item">爆款窗口只有几周<br>靠数据<span>提前锁定爆款</span></div>
-  </div>
+  <h1>如果能帮你选到合适的产品<br>我们会很高兴</h1>
   <p class="hero-sub">筛选当月爆款，已有数千真实商品数据，帮你提前发现爆款信号，提高爆单概率。</p>
 </div>
 
@@ -660,17 +656,6 @@ footer a { color: var(--text3); text-decoration: none; }
   红点数据 · 北苑笔谈 &nbsp;|&nbsp; © 2025 版权所有 · 未经授权禁止转载
 </footer>
 
-<script>
-(function() {
-  const items = document.querySelectorAll('.hero-title-item');
-  if (!items.length) return;
-  let current = 0;
-  setInterval(() => {
-    items[current].classList.remove('active');
-    current = (current + 1) % items.length;
-    items[current].classList.add('active');
-  }, 15000);
-})();
-</script>
+
 </body>
 </html>
