@@ -2113,6 +2113,25 @@ function getFiltered() {
       return true;
     });
   }
+  // 高级筛选
+  const af = advFilter;
+  if (Object.values(af).some(v => v !== null)) {
+    data = data.filter(d => {
+      const fans = Number(d.fans) || 0;
+      const gmv  = d.sales * d.price;
+      if (af.fansMin    !== null && fans           < af.fansMin)    return false;
+      if (af.fansMax    !== null && fans           > af.fansMax)    return false;
+      if (af.addCartMin !== null && d.addCart      < af.addCartMin) return false;
+      if (af.addCartMax !== null && d.addCart      > af.addCartMax) return false;
+      if (af.buy24hMin  !== null && (d.buy24h||0)  < af.buy24hMin)  return false;
+      if (af.buy24hMax  !== null && (d.buy24h||0)  > af.buy24hMax)  return false;
+      if (af.priceMin   !== null && d.price        < af.priceMin)   return false;
+      if (af.priceMax   !== null && d.price        > af.priceMax)   return false;
+      if (af.gmvMin     !== null && gmv            < af.gmvMin)     return false;
+      if (af.gmvMax     !== null && gmv            > af.gmvMax)     return false;
+      return true;
+    });
+  }
   const sort = document.getElementById('sort-select').value;
   const d = sortDir === 'desc' ? -1 : 1;
   const normFans = item => {
