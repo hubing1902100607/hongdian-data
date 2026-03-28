@@ -1068,6 +1068,7 @@
     <div class="filter-group" id="cat-filters"></div>
     <button id="fav-filter-btn" class="filter-btn" onclick="toggleFavFilter()" style="white-space:nowrap;">☆ 我的收藏</button>
     <button id="monitor-filter-btn" class="filter-btn" onclick="toggleMonitorFilter()" style="white-space:nowrap;display:none;">📡 我的监控</button>
+    <button id="adv-filter-btn" class="filter-btn" onclick="toggleAdvFilter()" style="white-space:nowrap;flex-shrink:0;">🎯 高级筛选</button>
     <select class="sort-select" id="sort-select" onchange="filterAndRender()">
       <option value="sales">按销量排序</option>
       <option value="addCart">按加购量排序</option>
@@ -1087,6 +1088,112 @@
     <button onclick="exportExcel()" style="padding:8px 14px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:8px;color:var(--teal);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">
       📊 导出 Excel
     </button>
+  </div>
+
+  <!-- 高级筛选面板 -->
+  <div id="adv-filter-panel" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:500;color:var(--text2);">🎯 高级筛选 · 各维度可单独或组合使用</div>
+      <button onclick="clearAdvFilter()" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:var(--mono);">清除全部</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;">
+
+      <!-- 粉丝数 -->
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">店铺粉丝</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input id="af-fans-min" type="number" placeholder="最小" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+          <span style="color:var(--text3);line-height:32px;">—</span>
+          <input id="af-fans-max" type="number" placeholder="最大" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="filter-btn" onclick="setAdvPreset('fans',0,1000)" style="font-size:10px;padding:3px 7px;flex:1;">≤1k</button>
+          <button class="filter-btn" onclick="setAdvPreset('fans',1000,5000)" style="font-size:10px;padding:3px 7px;flex:1;">1k-5k</button>
+          <button class="filter-btn" onclick="setAdvPreset('fans',5000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥5k</button>
+        </div>
+      </div>
+
+      <!-- 24h加购 -->
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">24h 加购</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input id="af-addcart-min" type="number" placeholder="最小" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+          <span style="color:var(--text3);line-height:32px;">—</span>
+          <input id="af-addcart-max" type="number" placeholder="最大" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="filter-btn" onclick="setAdvPreset('addcart',100,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥100</button>
+          <button class="filter-btn" onclick="setAdvPreset('addcart',500,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥500</button>
+          <button class="filter-btn" onclick="setAdvPreset('addcart',1000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥1k</button>
+        </div>
+      </div>
+
+      <!-- 24h购买 -->
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">24h 购买</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input id="af-buy24h-min" type="number" placeholder="最小" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+          <span style="color:var(--text3);line-height:32px;">—</span>
+          <input id="af-buy24h-max" type="number" placeholder="最大" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="filter-btn" onclick="setAdvPreset('buy24h',100,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥100</button>
+          <button class="filter-btn" onclick="setAdvPreset('buy24h',500,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥500</button>
+          <button class="filter-btn" onclick="setAdvPreset('buy24h',1000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥1k</button>
+        </div>
+      </div>
+
+      <!-- 价格 -->
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">价格 (¥)</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input id="af-price-min" type="number" placeholder="最小" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+          <span style="color:var(--text3);line-height:32px;">—</span>
+          <input id="af-price-max" type="number" placeholder="最大" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="filter-btn" onclick="setAdvPreset('price',0,30)" style="font-size:10px;padding:3px 7px;flex:1;">≤30</button>
+          <button class="filter-btn" onclick="setAdvPreset('price',30,100)" style="font-size:10px;padding:3px 7px;flex:1;">30-100</button>
+          <button class="filter-btn" onclick="setAdvPreset('price',100,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥100</button>
+        </div>
+      </div>
+
+      <!-- 预估GMV -->
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">预估 GMV (¥)</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input id="af-gmv-min" type="number" placeholder="最小" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+          <span style="color:var(--text3);line-height:32px;">—</span>
+          <input id="af-gmv-max" type="number" placeholder="最大" min="0"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;"
+            oninput="applyAdvFilter()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="filter-btn" onclick="setAdvPreset('gmv',10000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥1万</button>
+          <button class="filter-btn" onclick="setAdvPreset('gmv',50000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥5万</button>
+          <button class="filter-btn" onclick="setAdvPreset('gmv',100000,null)" style="font-size:10px;padding:3px 7px;flex:1;">≥10万</button>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- Table -->
@@ -1261,6 +1368,9 @@ let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
 let showMonitorOnly     = false;   // 是否只显示监控商品
+// 高级筛选条件
+let advFilter = { fansMin:null, fansMax:null, addCartMin:null, addCartMax:null, buy24hMin:null, buy24hMax:null, priceMin:null, priceMax:null, gmvMin:null, gmvMax:null };
+let advFilterOpen = false;
 let currentSignal       = null;    // 'low' | 'high' | 'hidden' | null
 let trendChartInstance  = null;    // 趋势图 Chart 实例
 let pendingImportRows   = [];      // 待确认导入的数据行
@@ -2756,6 +2866,62 @@ function updateFavBtn() {
   }
 }
 // ── End Favourites ────────────────────────────────────────
+
+// ── 粉丝数筛选 ────────────────────────────────────────────
+// ── 高级筛选 ──────────────────────────────────────────────
+function toggleAdvFilter() {
+  advFilterOpen = !advFilterOpen;
+  const panel = document.getElementById('adv-filter-panel');
+  const btn   = document.getElementById('adv-filter-btn');
+  if (panel) panel.style.display = advFilterOpen ? 'block' : 'none';
+  if (btn) {
+    const hasAdv = Object.values(advFilter).some(v => v !== null);
+    btn.classList.toggle('active', advFilterOpen || hasAdv);
+  }
+}
+
+function applyAdvFilter() {
+  const g = (id) => { const v = document.getElementById(id)?.value.trim(); return v !== '' && v != null ? parseFloat(v) : null; };
+  advFilter.fansMin    = g('af-fans-min');
+  advFilter.fansMax    = g('af-fans-max');
+  advFilter.addCartMin = g('af-addcart-min');
+  advFilter.addCartMax = g('af-addcart-max');
+  advFilter.buy24hMin  = g('af-buy24h-min');
+  advFilter.buy24hMax  = g('af-buy24h-max');
+  advFilter.priceMin   = g('af-price-min');
+  advFilter.priceMax   = g('af-price-max');
+  advFilter.gmvMin     = g('af-gmv-min');
+  advFilter.gmvMax     = g('af-gmv-max');
+  // 按钮高亮
+  const btn = document.getElementById('adv-filter-btn');
+  const hasAdv = Object.values(advFilter).some(v => v !== null);
+  if (btn) btn.classList.toggle('active', hasAdv);
+  currentPage = 1;
+  filterAndRender();
+}
+
+function clearAdvFilter() {
+  advFilter = { fansMin:null, fansMax:null, addCartMin:null, addCartMax:null, buy24hMin:null, buy24hMax:null, priceMin:null, priceMax:null, gmvMin:null, gmvMax:null };
+  ['af-fans-min','af-fans-max','af-addcart-min','af-addcart-max','af-buy24h-min','af-buy24h-max','af-price-min','af-price-max','af-gmv-min','af-gmv-max'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const btn = document.getElementById('adv-filter-btn');
+  if (btn) btn.classList.remove('active');
+  currentPage = 1;
+  filterAndRender();
+}
+
+function setAdvPreset(dim, min, max) {
+  const minId = 'af-' + dim + '-min';
+  const maxId = 'af-' + dim + '-max';
+  const minEl = document.getElementById(minId);
+  const maxEl = document.getElementById(maxId);
+  if (minEl) minEl.value = min !== null ? min : '';
+  if (maxEl) maxEl.value = max !== null ? max : '';
+  applyAdvFilter();
+}
+// ── End 高级筛选 ───────────────────────────────────────────
 
 // ── Monitor Filter ────────────────────────────────────────
 
