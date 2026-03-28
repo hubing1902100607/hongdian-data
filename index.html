@@ -395,12 +395,37 @@ footer a { color: var(--text3); text-decoration: none; }
 
 @media (max-width: 768px) {
   header { padding: 16px 20px; }
-  .hero { padding: 40px 20px 32px; }
-  .hero h1 { font-size: 28px; }
-  .plans-wrap { padding: 0 20px 48px; }
+  .hero { padding: 36px 20px 28px; }
+  .hero-titles { min-height: 80px; }
+  .hero-title-item { font-size: 26px; }
+  .hero-sub { font-size: 13px; }
+  .plans-wrap { padding: 0 16px 48px; }
   .plans-grid { grid-template-columns: 1fr; }
-  .pay-steps { grid-template-columns: 1fr 1fr; }
+  .pay-steps { grid-template-columns: 1fr; }
   .qr-row { flex-direction: column; align-items: center; }
+
+  /* 价值卡片区改为2列 */
+  .plans-wrap > div:first-child {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* 底部信息条竖排 */
+  .plans-wrap > div:nth-child(2) {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+  .plans-wrap > div:nth-child(2) > div[style*="width:1px"] {
+    display: none !important;
+  }
+
+  /* FAQ字体 */
+  .faq-q { font-size: 13px; }
+  .faq-a { font-size: 12px; }
+
+  /* footer */
+  footer { font-size: 11px; padding: 16px; }
 }
 </style>
 </head>

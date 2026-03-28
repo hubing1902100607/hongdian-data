@@ -805,11 +805,119 @@
   @media (max-width: 1100px) {
     .charts-row { grid-template-columns: 1fr 1fr; }
   }
+
   @media (max-width: 768px) {
-    main { padding: 20px 16px; }
-    header { padding: 18px 20px; }
-    .kpi-row { grid-template-columns: repeat(2, 1fr); }
-    .charts-row { grid-template-columns: 1fr; }
+    /* 基础布局 */
+    main { padding: 16px 12px; }
+    header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+
+    /* Header 右侧按钮区域滚动 */
+    .header-right {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 8px;
+      width: 100%;
+    }
+    .header-right::-webkit-scrollbar { display: none; }
+    .header-right button,
+    .header-right a,
+    .header-right span { flex-shrink: 0; }
+
+    /* KPI 卡片 2列 */
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .kpi-value { font-size: 24px; }
+
+    /* 图表区隐藏，手机不显示 */
+    .charts-row { display: none; }
+
+    /* 筛选栏 */
+    .controls-bar { gap: 8px; }
+    .search-box { min-width: 0; max-width: 100%; flex: 1; }
+    .filter-group {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      width: 100%;
+    }
+    .filter-group::-webkit-scrollbar { display: none; }
+    .filter-btn { flex-shrink: 0; }
+    .sort-select { font-size: 11px; padding: 7px 10px; }
+    .results-count { display: none; }
+
+    /* 表格改为卡片式 */
+    .table-wrap { overflow-x: unset; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    #table-body tr {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      padding: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+    #table-body tr:hover { border-color: var(--border-bright); }
+    #table-body td { padding: 0; border: none; }
+
+    /* 收藏按钮 */
+    #table-body td:nth-child(1) { order: 1; width: auto; }
+
+    /* 排名 */
+    #table-body td:nth-child(2) { order: 2; width: auto; }
+
+    /* 类目 */
+    #table-body td:nth-child(3) { order: 3; width: auto; }
+
+    /* 商品信息 - 占整行 */
+    #table-body td:nth-child(4) {
+      order: 4;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .product-name { max-width: 100%; white-space: normal; font-size: 13px; }
+    .product-name-wrap { max-width: 100%; }
+
+    /* 销量 */
+    #table-body td:nth-child(5) { order: 5; }
+
+    /* 加购 */
+    #table-body td:nth-child(6) { order: 6; }
+
+    /* 24h购买 */
+    #table-body td:nth-child(7) { order: 7; }
+
+    /* 价格 */
+    #table-body td:nth-child(8) { order: 8; }
+
+    /* 粉丝 - 隐藏 */
+    #table-body td:nth-child(9) { display: none; }
+
+    /* GMV */
+    #table-body td:nth-child(10) { order: 9; }
+
+    /* 链接按钮 */
+    #table-body td:nth-child(11) { order: 10; margin-left: auto; }
+
+    /* 底部滚动条隐藏 */
+    #bottom-scrollbar-wrap { display: none; }
+
+    /* 弹窗全屏 */
+    .modal-overlay { align-items: flex-end; }
+    .modal {
+      max-width: 100% !important;
+      width: 100%;
+      border-radius: 18px 18px 0 0;
+      max-height: 90vh;
+      padding: 24px 20px;
+    }
+    .modal-stats { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
