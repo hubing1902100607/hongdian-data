@@ -1106,7 +1106,7 @@
             <th onclick="setSortAndFilter('fans')" id="th-fans">店铺粉丝 ↕</th>
             <th onclick="setSortAndFilter('revenue')" id="th-revenue">预估GMV ↕</th>
             <th>商品链接</th>
-            <th id="th-first-date" style="display:none;white-space:nowrap;color:var(--text3);">录入时间</th>
+            <th id="th-first-date" style="display:none;white-space:nowrap;color:var(--text3);cursor:pointer;user-select:none;" onclick="setSortAndFilter('firstDate')">录入时间 ↕</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -1800,6 +1800,18 @@ function fmtY(n) {
   return n.toFixed(0);
 }
 
+// 统一历史日期格式为 YYYY-MM-DD
+function normalizeHistDate(raw) {
+  if (!raw) return '0000-00-00';
+  const s = String(raw).trim();
+  // 已是 YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // YYYY.M.D 或 YYYY.MM.DD
+  const m = s.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
+  if (m) return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+  return s;
+}
+
 function estimateRevenue(item) {
   return item.sales * item.price;
 }
@@ -1956,10 +1968,10 @@ function setSortAndFilter(col) {
     currentSort = col;
   }
   document.getElementById('sort-select').value = col;
-  ['sales','addCart','buy24h','price','fans','revenue'].forEach(k => {
+  ['sales','addCart','buy24h','price','fans','revenue','firstDate'].forEach(k => {
     const th = document.getElementById('th-' + k);
     if (!th) return;
-    const labels = {sales:'商品销量',addCart:'24h加购',buy24h:'24h购买',price:'价格',fans:'店铺粉丝',revenue:'预估GMV'};
+    const labels = {sales:'商品销量',addCart:'24h加购',buy24h:'24h购买',price:'价格',fans:'店铺粉丝',revenue:'预估GMV',firstDate:'录入时间'};
     if (k === col) {
       th.classList.add('sorted');
       th.textContent = labels[k] + (sortDir === 'desc' ? ' ↓' : ' ↑');
@@ -2003,6 +2015,11 @@ function getFiltered() {
   else if (sort === 'price') data.sort((a,b) => d * (b.price - a.price));
   else if (sort === 'revenue') data.sort((a,b) => d * (estimateRevenue(b) - estimateRevenue(a)));
   else if (sort === 'fans') data.sort((a,b) => d * (normFans(b) - normFans(a)));
+  else if (sort === 'firstDate') data.sort((a,b) => {
+    const da = a.salesHistory && a.salesHistory.length ? normalizeHistDate(a.salesHistory[0].date) : '0000-00-00';
+    const db = b.salesHistory && b.salesHistory.length ? normalizeHistDate(b.salesHistory[0].date) : '0000-00-00';
+    return d * da.localeCompare(db);
+  });
   return data;
 }
 
