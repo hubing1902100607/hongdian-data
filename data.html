@@ -2357,9 +2357,17 @@ function openModal(id) {
         <span style="font-size:12px;opacity:0.6">→ 打开商品页</span>
       </a>
     </div>
-    <button onclick="openAiWithProduct(${item.id})" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:10px;color:var(--teal);font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.2)'" onmouseout="this.style.background='rgba(0,201,167,0.1)'">
-      🤖 用 AI 分析这个商品
-    </button>
+    ${(function(){
+      const _sess = loadSession();
+      const _code = (_sess && _sess.code) || '';
+      const _parts = _code.toUpperCase().split('-');
+      const _ok = currentRole === 'admin' || (_parts.length === 4 && (_parts[1] === 'Q' || _parts[1] === 'Y'));
+      if (_ok) {
+        return '<button onclick="openAiWithProduct(' + item.id + ')" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:10px;color:var(--teal);font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;" onmouseover="this.style.background=\'rgba(0,201,167,0.2)\'" onmouseout="this.style.background=\'rgba(0,201,167,0.1)\'">🤖 用 AI 分析这个商品</button>';
+      } else {
+        return '<button onclick="alert(\'AI选品助手仅限季度及以上会员使用，请升级套餐后体验。\')" style="width:100%;margin-top:10px;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text3);font-size:13px;font-family:var(--font);cursor:not-allowed;">🤖 AI 分析（季度及以上会员专属）</button>';
+      }
+    })()}
   `;
 
   document.getElementById('modal-overlay').classList.add('open');
