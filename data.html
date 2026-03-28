@@ -1106,6 +1106,7 @@
             <th onclick="setSortAndFilter('fans')" id="th-fans">店铺粉丝 ↕</th>
             <th onclick="setSortAndFilter('revenue')" id="th-revenue">预估GMV ↕</th>
             <th>商品链接</th>
+            <th id="th-first-date" style="display:none;white-space:nowrap;color:var(--text3);">录入时间</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -1561,6 +1562,10 @@ function enterApp(role) {
   renderCatFilters();
   renderTable();
   updateFavBtn();
+
+  // 管理员显示录入时间列
+  const thDate = document.getElementById('th-first-date');
+  if (thDate) thDate.style.display = role === 'admin' ? '' : 'none';
 }
 
 // ── Secret admin shortcut: press 'I' key 5 times quickly to open import ──
@@ -2078,6 +2083,7 @@ function renderTable() {
           ${currentRole === 'admin' ? '<button class="link-btn" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a;" onclick="event.stopPropagation();openEditModal(' + item.id + ')">✏️</button>' : ''}
           ${currentRole === 'admin' ? '<button class="link-btn del-btn" onclick="event.stopPropagation();deleteProduct(' + item.id + ')">🗑️</button>' : ''}
         </td>
+        ${currentRole === 'admin' ? '<td style="font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap;">' + (item.salesHistory && item.salesHistory.length ? item.salesHistory[0].date : '—') + '</td>' : ''}
       </tr>
     `;
   }).join('');
