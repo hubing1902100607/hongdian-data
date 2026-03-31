@@ -762,8 +762,7 @@ async function findDuplicates() {
             ✓ 保留选中项，删除其余重复记录
           </button>
           <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;"
-            onclick="(function(){const boxes=document.querySelectorAll('input[name=\'keep-${store.replace(/[^a-z0-9]/gi,'_')}\']');const allChecked=[...boxes].every(b=>b.checked);boxes.forEach(b=>b.checked=!allChecked);})()">
-            全选/全不选
+            onclick="clearGroup('${store.replace(/[^a-z0-9]/gi,'_')}')">\n            取消全部勾选
           </button>
         </div>
       </div>
@@ -849,6 +848,10 @@ async function batchMergeAll() {
 
   alert('✓ 批量执行完成！\n成功删除 ' + successCount + ' 条重复记录' + (errorCount ? '，' + errorCount + ' 条失败' : '') + '。');
   findDuplicates();
+}
+
+function clearGroup(groupName) {
+  document.querySelectorAll('input[name="keep-' + groupName + '"]').forEach(b => b.checked = false);
 }
 
 // ── End 查找合并重复商品 ──
