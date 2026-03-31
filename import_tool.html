@@ -754,6 +754,10 @@ async function findDuplicates() {
             onclick="mergeGroup('${store.replace(/'/g,"\\'")}', [${items.map(i=>i.id).join(',')}])">
             ✓ 保留选中项，删除其余重复记录
           </button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;"
+            onclick="document.querySelectorAll('input[name=\'keep-${store.replace(/[^a-z0-9]/gi,'_')}\']').forEach(r=>r.checked=false)">
+            取消选择
+          </button>
         </div>
       </div>
     `).join('');
