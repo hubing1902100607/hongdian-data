@@ -824,6 +824,7 @@ async function batchMergeAll() {
 
   // 只处理：有勾选（保留）且有未勾选（删除）的分组，两者都要有
   const toProcess = Object.values(groups).filter(g => g.keepIds.length > 0 && g.deleteIds.length > 0);
+  console.log('toProcess:', toProcess.length, toProcess.map(g=>({keep:g.keepIds, del:g.deleteIds})));
   if (!toProcess.length) { alert('没有需要处理的分组。\n\n请在要处理的分组里勾选要保留的条目，未勾选的将被删除。'); return; }
 
   const totalDelete = toProcess.reduce((sum, g) => sum + g.deleteIds.length, 0);
