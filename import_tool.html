@@ -777,12 +777,7 @@ async function mergeGroup(store, ids) {
   const keepId = parseInt(selected.value);
   const mergeIds = ids.filter(id => id !== keepId);
 
-  if (!confirm('确认合并？
-
-将保留 ID=' + keepId + ' 的商品，
-把其他 ' + mergeIds.length + ' 条的历史销量数据并入后删除。
-
-此操作不可撤销。')) return;
+  if (!confirm('确认合并？\n\n将保留选中商品，把其他 ' + mergeIds.length + ' 条的历史销量数据并入后删除。\n\n此操作不可撤销。')) return;
 
   try {
     // 拉取最新数据
