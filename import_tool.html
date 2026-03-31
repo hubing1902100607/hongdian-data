@@ -240,6 +240,12 @@ tr:last-child td{border-bottom:none;}
     <button class="btn btn-ghost" id="find-dup-btn" onclick="findDuplicates()">🔍 扫描重复商品</button>
     <div id="dup-result" style="margin-top:16px;display:none;">
       <div id="dup-summary" style="font-size:12px;color:var(--text2);margin-bottom:12px;"></div>
+      <div id="dup-batch-wrap" style="display:none;margin-bottom:12px;">
+        <button class="btn btn-primary" onclick="batchMergeAll()" style="background:var(--teal);font-size:12px;padding:8px 16px;">
+          ✓ 批量执行：保留所有已选中项，删除其余重复记录
+        </button>
+        <span style="font-size:11px;color:var(--text3);margin-left:10px;">仅处理已选中的分组，未选中的跳过</span>
+      </div>
       <div id="dup-list"></div>
     </div>
   </div>
@@ -732,14 +738,15 @@ async function findDuplicates() {
     }
 
     summaryEl.textContent = '发现 ' + dupGroups.length + ' 家店铺有多条商品记录，请逐一确认是否为重复：';
+    document.getElementById('dup-batch-wrap').style.display = 'block';
 
     listEl.innerHTML = dupGroups.map(([store, items]) => `
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
         <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;">🏪 ${store}（${items.length} 条记录）</div>
         ${items.map(item => `
           <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-            <input type="radio" name="keep-${store.replace(/[^a-z0-9]/gi,'_')}" value="${item.id}"
-              style="margin-top:3px;flex-shrink:0;">
+            <input type="checkbox" name="keep-${store.replace(/[^a-z0-9]/gi,'_')}" value="${item.id}" checked
+              style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer;">
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;color:var(--text);margin-bottom:3px;word-break:break-all;">${item.name ? item.name.slice(0,50)+'…' : '（无名称）'}</div>
               <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">
@@ -755,8 +762,8 @@ async function findDuplicates() {
             ✓ 保留选中项，删除其余重复记录
           </button>
           <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;"
-            onclick="document.querySelectorAll('input[name=\'keep-${store.replace(/[^a-z0-9]/gi,'_')}\']').forEach(r=>r.checked=false)">
-            取消选择
+            onclick="(function(){const boxes=document.querySelectorAll('input[name=\'keep-${store.replace(/[^a-z0-9]/gi,'_')}\']');const allChecked=[...boxes].every(b=>b.checked);boxes.forEach(b=>b.checked=!allChecked);})()">
+            全选/全不选
           </button>
         </div>
       </div>
@@ -775,11 +782,12 @@ async function mergeGroup(store, ids) {
   if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
 
   // 找出选中的主条目
-  const radioName = 'keep-' + store.replace(/[^a-z0-9]/gi,'_');
-  const selected = document.querySelector('input[name="' + radioName + '"]:checked');
-  if (!selected) { alert('请先选择要保留的主条目（点击左侧单选按钮）'); return; }
-  const keepId = parseInt(selected.value);
-  const deleteIds = ids.filter(id => id !== keepId);
+  const checkName = 'keep-' + store.replace(/[^a-z0-9]/gi,'_');
+  const checkedBoxes = document.querySelectorAll('input[name="' + checkName + '"]:checked');
+  if (!checkedBoxes.length) { alert('至少保留一条记录，请勾选要保留的商品'); return; }
+  const keepIds = [...checkedBoxes].map(b => parseInt(b.value));
+  const deleteIds = ids.filter(id => !keepIds.includes(id));
+  if (!deleteIds.length) { alert('没有需要删除的记录，请取消勾选要删除的商品'); return; }
 
   if (!confirm('确认操作？\n\n将保留选中的商品，删除其他 ' + deleteIds.length + ' 条重复记录。\n\n此操作不可撤销。')) return;
 
@@ -795,12 +803,53 @@ async function mergeGroup(store, ids) {
       if (!delData.ok) throw new Error('删除 ID=' + did + ' 失败：' + delData.error);
     }
 
-    alert('✓ 完成！已保留选中商品，删除了 ' + deleteIds.length + ' 条重复记录。');
+    alert('✓ 完成！已保留勾选的条目，删除了 ' + deleteIds.length + ' 条重复记录。');
     findDuplicates(); // 刷新列表
   } catch(err) {
     alert('操作失败：' + err.message);
   }
 }
+async function batchMergeAll() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+
+  // 收集每组的保留ID和删除ID（使用checkbox）
+  const groups = {};
+  document.querySelectorAll('#dup-list input[type=checkbox]').forEach(b => {
+    const name = b.name;
+    if (!groups[name]) groups[name] = { keepIds: [], deleteIds: [], allIds: [] };
+    groups[name].allIds.push(parseInt(b.value));
+    if (b.checked) groups[name].keepIds.push(parseInt(b.value));
+    else groups[name].deleteIds.push(parseInt(b.value));
+  });
+
+  const toProcess = Object.values(groups).filter(g => g.deleteIds.length > 0);
+  if (!toProcess.length) { alert('没有需要删除的记录，请取消勾选要删除的商品'); return; }
+
+  const totalDelete = toProcess.reduce((sum, g) => sum + g.allIds.filter(id => id !== g.keepId).length, 0);
+  if (!confirm('确认批量执行？\n\n共 ' + toProcess.length + ' 个分组，将删除 ' + totalDelete + ' 条重复记录。\n\n此操作不可撤销。')) return;
+
+  let successCount = 0, errorCount = 0;
+  for (const g of toProcess) {
+    const deleteIds = g.deleteIds;
+    for (const did of deleteIds) {
+      try {
+        const delRes = await fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: did }),
+        });
+        const delData = await delRes.json();
+        if (delData.ok) successCount++;
+        else errorCount++;
+      } catch(e) { errorCount++; }
+    }
+  }
+
+  alert('✓ 批量执行完成！\n成功删除 ' + successCount + ' 条重复记录' + (errorCount ? '，' + errorCount + ' 条失败' : '') + '。');
+  findDuplicates();
+}
+
 // ── End 查找合并重复商品 ──
 
 // ── 删除某天历史记录 ──
