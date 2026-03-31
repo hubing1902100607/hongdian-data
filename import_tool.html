@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>红点数据 · 数据导入工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24; --card:#16161f;
+  --border:rgba(255,255,255,0.07); --border-b:rgba(255,255,255,0.14);
+  --red:#ff2d55; --red-d:rgba(255,45,85,0.15);
+  --teal:#00c9a7; --teal-d:rgba(0,201,167,0.12);
+  --gold:#ffd60a; --gold-d:rgba(255,214,10,0.12);
+  --text:#e8e8f0; --text2:#9090a8; --text3:#5a5a70;
+  --font:'Noto Sans SC',sans-serif; --mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:40px 20px;}
+.wrap{max-width:900px;margin:0 auto;}
+
+/* Header */
+.header{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+.logo-icon{width:40px;height:40px;background:var(--red);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(255,45,85,0.4);}
+.logo-text{font-size:16px;font-weight:500;}
+.logo-sub{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;}
+.card-title{font-size:13px;font-weight:500;color:var(--text2);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.card-title-dot{width:6px;height:6px;border-radius:50%;}
+
+/* Step indicator */
+.steps{display:flex;gap:0;margin-bottom:32px;}
+.step-item{flex:1;text-align:center;position:relative;}
+.step-item::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:1px;background:var(--border);z-index:0;}
+.step-item:last-child::after{display:none;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);color:var(--text3);margin:0 auto 8px;position:relative;z-index:1;transition:all .2s;}
+.step-label{font-size:11px;color:var(--text3);}
+.step-item.active .step-num{background:var(--red-d);border-color:rgba(255,45,85,0.4);color:var(--red);}
+.step-item.active .step-label{color:var(--text2);}
+.step-item.done .step-num{background:var(--teal-d);border-color:rgba(0,201,167,0.4);color:var(--teal);}
+
+/* Upload zone */
+.upload-zone{border:1.5px dashed var(--border-b);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.upload-zone:hover,.upload-zone.drag{border-color:rgba(255,45,85,0.4);background:var(--red-d);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:36px;margin-bottom:12px;}
+.upload-text{font-size:14px;font-weight:500;margin-bottom:6px;}
+.upload-hint{font-size:12px;color:var(--text3);}
+
+/* Field mapping */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-row{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;}
+.field-label span{color:var(--red);}
+.field-select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;width:100%;cursor:pointer;}
+.field-select:focus{border-color:var(--border-b);}
+.field-select option{background:var(--bg3);}
+
+/* Preview table */
+.preview-wrap{overflow-x:auto;margin-top:16px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{border-bottom:1px solid var(--border);}
+th{padding:10px 12px;text-align:left;font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
+tr:last-child td{border-bottom:none;}
+.tag-new{padding:2px 7px;background:var(--teal-d);border:1px solid rgba(0,201,167,0.3);border-radius:4px;color:var(--teal);font-size:10px;font-family:var(--mono);}
+.tag-update{padding:2px 7px;background:var(--red-d);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:var(--red);font-size:10px;font-family:var(--mono);}
+
+/* Buttons */
+.btn{padding:12px 24px;border:none;border-radius:9px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{opacity:.88;}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{background:var(--bg3);border:1px solid var(--border);color:var(--text2);}
+.btn-ghost:hover{border-color:var(--border-b);color:var(--text);}
+.btn-row{display:flex;gap:10px;margin-top:20px;}
+
+/* Summary bar */
+.summary{display:flex;gap:20px;padding:14px 18px;background:var(--bg3);border-radius:10px;margin-bottom:16px;flex-wrap:wrap;}
+.summary-item{font-size:12px;color:var(--text2);}
+.summary-item b{font-family:var(--mono);font-size:14px;}
+.summary-item .num-update{color:var(--red);}
+.summary-item .num-new{color:var(--teal);}
+.summary-item .num-total{color:var(--text);}
+
+/* Result */
+.result-card{text-align:center;padding:40px 20px;}
+.result-icon{font-size:48px;margin-bottom:16px;}
+.result-title{font-size:18px;font-weight:500;margin-bottom:8px;}
+.result-sub{font-size:13px;color:var(--text2);line-height:1.7;}
+
+/* Password */
+.pwd-row{display:flex;gap:10px;align-items:center;margin-bottom:20px;}
+.pwd-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;}
+.pwd-input:focus{border-color:var(--border-b);}
+.pwd-status{font-size:12px;font-family:var(--mono);}
+.pwd-ok{color:var(--teal);}
+.pwd-err{color:var(--red);}
+
+/* Notice */
+.notice{padding:12px 16px;background:var(--gold-d);border:1px solid rgba(255,214,10,0.2);border-radius:8px;font-size:12px;color:#c8a800;line-height:1.7;margin-bottom:20px;}
+
+/* Progress */
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:12px;}
+.progress-fill{height:100%;background:var(--red);border-radius:2px;transition:width .3s;}
+
+/* Hide/show sections */
+.section{display:none;}
+.section.active{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo-icon">📥</div>
+    <div>
+      <div class="logo-text">红点数据 · 数据导入工具</div>
+      <div class="logo-sub">IMPORT TOOL · LOCAL USE ONLY</div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step-item active" id="s1"><div class="step-num">1</div><div class="step-label">上传文件</div></div>
+    <div class="step-item" id="s2"><div class="step-num">2</div><div class="step-label">匹配字段</div></div>
+    <div class="step-item" id="s3"><div class="step-num">3</div><div class="step-label">预览确认</div></div>
+    <div class="step-item" id="s4"><div class="step-num">4</div><div class="step-label">导入完成</div></div>
+  </div>
+
+  <!-- Section 1: Upload -->
+  <div class="section active" id="sec1">
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>管理员密码</div>
+      <div class="pwd-row">
+        <input class="pwd-input" type="password" id="pwd-input" placeholder="输入管理员密码" oninput="checkPwd()">
+        <span class="pwd-status" id="pwd-status"></span>
+      </div>
+      <div class="card-title"><span class="card-title-dot" style="background:var(--teal)"></span>上传数据文件</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" accept=".csv,.xlsx,.xls" id="file-input" onchange="handleFile(this)">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">点击选择 CSV 文件，或拖拽到此处</div>
+        <div class="upload-hint">支持 .csv · .xlsx · .xls 格式</div>
+      </div>
+    </div>
+    <div class="card" id="fix-card">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--gold)"></span>修复旧数据日期格式（首次使用前执行一次）</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      如果趋势图时间轴顺序错乱，点击下方按钮一次性修复 KV 里所有商品的历史日期格式。<br>
+      <span style="color:var(--text3)">执行后旧数据中的 <code style="font-family:var(--mono);color:var(--gold)">2026-3-16</code> 会统一修正为 <code style="font-family:var(--mono);color:var(--teal)">2026-03-16</code>，同时去除重复日期并重新排序。</span>
+    </div>
+    <button class="btn btn-ghost" id="fix-btn" onclick="fixDates()">🔧 一键修复历史日期格式</button>
+    <div id="fix-result" style="margin-top:12px;font-size:12px;font-family:var(--mono);display:none"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--purple,#bf5af2)"></span>查看用户提交的监控链接</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      查看所有付费用户提交的待监控商品链接，导出Excel后补充商品数据再导入。导出表格已包含submittedBy列，无需手动填写。
+    </div>
+    <button class="btn btn-ghost" id="links-btn" onclick="loadMonitorLinks()">📋 查看待监控链接</button>
+    <div id="links-result" style="margin-top:16px;display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text2);" id="links-count"></div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="exportMonitorLinks()">📥 导出Excel</button>
+      </div>
+      <div id="links-list" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:300px;overflow-y:auto;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:#a855f7"></span>查看货源申请（对接货源）</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      查看所有付费用户提交的货源对接申请，跟进后可联系用户微信反馈结果。
+    </div>
+    <button class="btn btn-ghost" id="supply-buy-btn" onclick="loadSupplyBuy()">📋 查看货源申请</button>
+    <div id="supply-buy-result" style="margin-top:16px;display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text2);" id="supply-buy-count"></div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="exportSupplyList('buy')">📥 导出Excel</button>
+      </div>
+      <div id="supply-buy-list" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:400px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:#a855f7"></span>查看货源登记（提供货源）</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      查看供货商提交的货源资源登记，审核通过后可向买家推荐。
+    </div>
+    <button class="btn btn-ghost" id="supply-sell-btn" onclick="loadSupplySell()">📋 查看货源登记</button>
+    <div id="supply-sell-result" style="margin-top:16px;display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text2);" id="supply-sell-count"></div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="exportSupplyList('sell')">📥 导出Excel</button>
+      </div>
+      <div id="supply-sell-list" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:400px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- 按链接删除商品 -->
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>按链接删除失效商品</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      当商品链接失效无法更新数据时，粘贴链接后点击删除，即可将该商品从选品页面移除。
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <input type="text" id="del-link-input" placeholder="粘贴失效的商品链接，如 https://xhslink.com/m/xxx"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;"
+        onfocus="this.style.borderColor='var(--border-b)'" onblur="this.style.borderColor='var(--border)'">
+      <button class="btn btn-primary" onclick="deleteByLink()" id="del-link-btn" style="background:var(--red);white-space:nowrap;">🗑️ 删除商品</button>
+    </div>
+    <div id="del-link-result" style="display:none;font-size:12px;font-family:var(--mono);padding:8px 12px;border-radius:6px;margin-top:4px;"></div>
+  </div>
+
+  <!-- 删除某天历史记录 -->
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--gold)"></span>删除某天历史销量记录</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      当趋势图中出现错误的历史记录时，填写商品链接和日期，即可删除该天的数据。
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:10px;">
+      <input type="text" id="del-hist-link" placeholder="商品链接，如 https://xhslink.com/m/xxx"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;">
+      <input type="date" id="del-hist-date"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;">
+    </div>
+    <button class="btn btn-primary" onclick="deleteHistoryDate()" id="del-hist-btn" style="background:rgba(255,214,10,0.8);color:#000;white-space:nowrap;">🗑️ 删除该天记录</button>
+    <div id="del-hist-result" style="display:none;font-size:12px;font-family:var(--mono);padding:8px 12px;border-radius:6px;margin-top:10px;"></div>
+  </div>
+
+  <!-- 查找合并重复商品 -->
+  <div class="card">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--teal)"></span>查找并合并重复商品</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      按店铺名称分组，找出同一家店下可能重复的商品，选择要保留的主条目，将另一条的历史数据合并进去后删除重复项。
+    </div>
+    <button class="btn btn-ghost" id="find-dup-btn" onclick="findDuplicates()">🔍 扫描重复商品</button>
+    <div id="dup-result" style="margin-top:16px;display:none;">
+      <div id="dup-summary" style="font-size:12px;color:var(--text2);margin-bottom:12px;"></div>
+      <div id="dup-list"></div>
+    </div>
+  </div>
+
+  <div class="notice">⚠️ 此工具仅供本地使用，请勿上传到 GitHub 或分享给他人</div>
+  </div>
+
+  <!-- Section 2: Field mapping -->
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--teal)"></span>字段匹配 · 请确认每个字段对应的列</div>
+      <div class="field-grid" id="field-grid"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goPreview()">下一步：预览数据 →</button>
+        <button class="btn btn-ghost" onclick="goStep(1)">← 重新上传</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Preview -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--gold)"></span>数据预览</div>
+      <div class="summary" id="preview-summary"></div>
+      <div class="preview-wrap">
+        <table>
+          <thead><tr id="preview-thead"></tr></thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="import-btn" onclick="doImport()">确认导入到 KV →</button>
+        <button class="btn btn-ghost" onclick="goStep(2)">← 返回修改</button>
+      </div>
+      <div class="progress-bar" id="progress-bar" style="display:none"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Section 4: Done -->
+  <div class="section" id="sec4">
+    <div class="card">
+      <div class="result-card" id="result-content"></div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-primary" onclick="goStep(1)">继续导入新数据</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const WORKER_URL     = 'https://1413969452-8uv87lps3h.ap-guangzhou.tencentscf.com';
+const ADMIN_PASSWORD = 'qwer123';
+
+// ── State ──
+let csvHeaders = [];
+let csvRows    = [];
+let fieldMap   = {};
+let parsedRows = [];
+
+// ── Password check ──
+function checkPwd() {
+  const val = document.getElementById('pwd-input').value;
+  const el  = document.getElementById('pwd-status');
+  if (val === ADMIN_PASSWORD) {
+    el.textContent = '✓ 密码正确';
+    el.className = 'pwd-status pwd-ok';
+  } else if (val.length > 0) {
+    el.textContent = '✗ 密码错误';
+    el.className = 'pwd-status pwd-err';
+  } else {
+    el.textContent = '';
+  }
+}
+
+// ── Step navigation ──
+function goStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('sec'+i).classList.toggle('active', i===n);
+    const s = document.getElementById('s'+i);
+    s.classList.remove('active','done');
+    if (i < n) s.classList.add('done');
+    else if (i === n) s.classList.add('active');
+  });
+}
+
+// ── File handling ──
+function handleFile(input) {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) {
+    alert('请先输入正确的管理员密码');
+    input.value = '';
+    return;
+  }
+  const file = input.files[0];
+  if (!file) return;
+  handleAnyFile(file);
+}
+
+function handleAnyFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb  = XLSX.read(e.target.result, { type: 'array' });
+        const ws  = wb.Sheets[wb.SheetNames[0]];
+        parseCSV(XLSX.utils.sheet_to_csv(ws));
+      } catch(err) { alert('Excel 解析失败：' + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    readFileWithEncoding(file, parseCSV);
+  }
+}
+
+function readFileWithEncoding(file, callback) {
+  // 先尝试 UTF-8，如果有乱码再用 GBK
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    // 检测是否有乱码（GBK 用 UTF-8 读会出现替换字符 �）
+    if (text.includes('�')) {
+      const reader2 = new FileReader();
+      reader2.onload = e2 => callback(e2.target.result);
+      reader2.readAsText(file, 'GBK');
+    } else {
+      callback(text);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// Drag & drop
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag');
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  handleAnyFile(file);
+});
+
+// ── CSV parse ──
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
+  if (lines.length < 2) { alert('文件内容为空'); return; }
+  csvHeaders = lines[0].replace(/^\uFEFF/,'').split(',').map(h => h.trim().replace(/"/g,''));
+  csvRows = lines.slice(1).map(l => l.split(',').map(c => c.trim().replace(/"/g,'')));
+  buildFieldMapping();
+  goStep(2);
+}
+
+// ── Field mapping UI ──
+const FIELDS = [
+  { key:'link',    label:'商品链接', required:true,  aliases:['商品链接','链接','link','产品链接'] },
+  { key:'date',    label:'日期',     required:true,  aliases:['日期','date','更新时间','时间'] },
+  { key:'sales',   label:'销量',     required:true,  aliases:['销量','月销量','商品销量','sales'] },
+  { key:'name',    label:'商品名称', required:false, aliases:['商品名称','商品名','名称','name'] },
+  { key:'store',   label:'店铺名',   required:false, aliases:['店铺名','店铺名称','store','店铺'] },
+  { key:'category',label:'类目',     required:false, aliases:['类目','category','分类'] },
+  { key:'addCart', label:'24h加购',  required:false, aliases:['24小时加购','24h加购','加购','addcart','add_cart'] },
+  { key:'buy24h',  label:'24h购买',  required:false, aliases:['24小时购买人数','24h购买人数','购买人数','buy24h'] },
+  { key:'price',   label:'价格',     required:false, aliases:['价格','售价','price'] },
+  { key:'fans',    label:'店铺粉丝', required:false, aliases:['店铺粉丝','粉丝','fans','粉丝数'] },
+  { key:'submittedBy', label:'专属用户码', required:false, aliases:['submittedBy','submitted_by','设备码','用户码'] },
+];
+
+function autoMatch(aliases) {
+  for (const alias of aliases) {
+    const idx = csvHeaders.findIndex(h => h === alias || h.toLowerCase() === alias.toLowerCase());
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function buildFieldMapping() {
+  const grid = document.getElementById('field-grid');
+  grid.innerHTML = FIELDS.map(f => {
+    const matched = autoMatch(f.aliases);
+    const options = csvHeaders.map((h,i) => `<option value="${i}" ${matched===i?'selected':''}>${h}</option>`).join('');
+    return `
+      <div class="field-row">
+        <div class="field-label">${f.label}${f.required ? ' <span>*必填</span>' : ''}</div>
+        <select class="field-select" id="fm-${f.key}">
+          <option value="-1">— 不导入此字段 —</option>
+          ${options}
+        </select>
+      </div>`;
+  }).join('');
+}
+
+// ── Preview ──
+function normalizeDate(raw) {
+  if (!raw) return new Date().toISOString().slice(0,10);
+  const md = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (md) { const y = new Date().getFullYear(); return `${y}-${md[1].padStart(2,'0')}-${md[2].padStart(2,'0')}`; }
+  const ymd = raw.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) return `${ymd[1]}-${ymd[2].padStart(2,'0')}-${ymd[3].padStart(2,'0')}`;
+  return raw;
+}
+
+function parsePrice(raw) {
+  if (!raw) return null;
+  const v = parseFloat(String(raw).replace(/[¥￥\s,]/g,''));
+  return isNaN(v) ? null : v;
+}
+
+function parseSales(raw) {
+  if (!raw) return 0;
+  const s = String(raw).trim();
+  const wm = s.match(/^([\d.]+)\s*[万wW]\+?/);
+  if (wm) return Math.round(parseFloat(wm[1]) * 10000);
+  return parseInt(s) || 0;
+}
+
+function parseFans(raw) {
+  if (!raw || raw === '0' || raw === '-') return null;
+  const s = String(raw).trim();
+  const wm = s.match(/^([\d.]+)[wW万]/);
+  if (wm) return Math.round(parseFloat(wm[1]) * 10000);
+  const v = parseFloat(s);
+  return isNaN(v) ? null : v;
+}
+
+function getCol(key) { return parseInt(document.getElementById('fm-'+key)?.value ?? '-1'); }
+
+function goPreview() {
+  const linkCol  = getCol('link');
+  const salesCol = getCol('sales');
+  if (linkCol === -1 || salesCol === -1) {
+    alert('「商品链接」和「销量」是必填字段，请确认已选择对应列');
+    return;
+  }
+
+  parsedRows = [];
+  for (const cols of csvRows) {
+    const link  = cols[linkCol]?.trim();
+    const sales = parseSales(cols[salesCol]);
+    if (!link || !sales) continue;
+    parsedRows.push({
+      link,
+      sales,
+      date:     normalizeDate(getCol('date') !== -1 ? cols[getCol('date')] : ''),
+      name:     getCol('name')     !== -1 ? cols[getCol('name')]     : '',
+      store:    getCol('store')    !== -1 ? cols[getCol('store')]    : '',
+      category: getCol('category') !== -1 ? cols[getCol('category')] : '',
+      addCart:  getCol('addCart')  !== -1 ? (parseInt(cols[getCol('addCart')]) || 0) : 0,
+      buy24h:   getCol('buy24h')   !== -1 ? (parseInt(cols[getCol('buy24h')])  || 0) : 0,
+      price:    getCol('price')    !== -1 ? parsePrice(cols[getCol('price')])  : null,
+      fans:     getCol('fans')        !== -1 ? parseFans(cols[getCol('fans')])    : null,
+      submittedBy: getCol('submittedBy') !== -1 ? (cols[getCol('submittedBy')]?.trim() || '') : '',
+    });
+  }
+
+  if (!parsedRows.length) { alert('解析后没有有效数据，请检查字段匹配是否正确'); return; }
+
+  // Summary
+  document.getElementById('preview-summary').innerHTML = `
+    <div class="summary-item">共解析 <b class="num-total">${parsedRows.length}</b> 条数据</div>
+    <div class="summary-item">日期范围：<b class="num-total">${parsedRows[0].date}</b></div>
+    <div class="summary-item" style="color:var(--text3);font-size:11px;">导入后：已有商品自动追加历史记录，新商品自动创建</div>
+  `;
+
+  // Table preview (first 15 rows)
+  document.getElementById('preview-thead').innerHTML =
+    '<th>商品链接</th><th>商品名称</th><th>销量</th><th>加购</th><th>价格</th><th>粉丝</th><th>日期</th>';
+
+  const preview = parsedRows.slice(0,15);
+  document.getElementById('preview-tbody').innerHTML = preview.map(r => `
+    <tr>
+      <td style="color:var(--teal)">${r.link.slice(0,30)}…</td>
+      <td>${r.name ? r.name.slice(0,20)+'…' : '—'}</td>
+      <td style="font-family:var(--mono)">${r.sales.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">${r.addCart || '—'}</td>
+      <td style="font-family:var(--mono)">${r.price != null ? '¥'+r.price : '—'}</td>
+      <td style="font-family:var(--mono)">${r.fans != null ? r.fans.toLocaleString() : '—'}</td>
+      <td style="font-family:var(--mono)">${r.date}</td>
+    </tr>
+  `).join('');
+
+  if (parsedRows.length > 15) {
+    document.getElementById('preview-tbody').innerHTML +=
+      `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:12px">…还有 ${parsedRows.length-15} 条未显示</td></tr>`;
+  }
+
+  goStep(3);
+}
+
+// ── Import ──
+async function doImport() {
+  const btn  = document.getElementById('import-btn');
+  const bar  = document.getElementById('progress-bar');
+  const fill = document.getElementById('progress-fill');
+
+  btn.disabled = true;
+  btn.textContent = '导入中…';
+  bar.style.display = 'block';
+  fill.style.width = '30%';
+
+  const rowsToSend = parsedRows.map(r => ({
+    link:        r.link,
+    sales:       r.sales,
+    date:        r.date,
+    addCart:     r.addCart,
+    buy24h:      r.buy24h,
+    price:       r.price,
+    fans:        r.fans,
+    name:        r.name,
+    category:    r.category,
+    store:       r.store,
+    submittedBy: r.submittedBy || '',
+  }));
+
+  try {
+    fill.style.width = '60%';
+    const res  = await fetch(WORKER_URL + '/api/import?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: rowsToSend }),
+    });
+    fill.style.width = '90%';
+    const data = await res.json();
+    fill.style.width = '100%';
+
+    if (!data.ok) throw new Error(data.error || '未知错误');
+
+    setTimeout(() => {
+      document.getElementById('result-content').innerHTML = `
+        <div class="result-icon">✅</div>
+        <div class="result-title">导入成功！</div>
+        <div class="result-sub">
+          更新了 <b style="color:var(--red)">${data.updated}</b> 个已有商品的历史数据<br>
+          新增了 <b style="color:var(--teal)">${data.added}</b> 个新商品<br>
+          KV 现共有 <b style="color:var(--text)">${data.total}</b> 条商品数据
+        </div>
+      `;
+      goStep(4);
+    }, 400);
+
+  } catch(err) {
+    fill.style.width = '0%';
+    bar.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '确认导入到 KV →';
+    alert('导入失败：' + err.message + '\n\n请检查网络连接和密码是否正确');
+  }
+}
+let _monitorLinks = [];
+
+async function loadMonitorLinks() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const btn = document.getElementById('links-btn');
+  btn.disabled = true;
+  btn.textContent = '加载中…';
+  try {
+    const res  = await fetch(WORKER_URL + '/api/monitor-links?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    _monitorLinks = data.links || [];
+    document.getElementById('links-count').textContent = '共 ' + _monitorLinks.length + ' 条待监控链接';
+    document.getElementById('links-list').innerHTML = _monitorLinks.length
+      ? _monitorLinks.map(m =>
+          '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--teal);">' +
+          m.link + '<span style="color:var(--text3);margin-left:12px;font-size:11px;">提交于 ' + m.submittedAt + '</span></div>'
+        ).join('')
+      : '<div style="color:var(--text3);font-size:12px;">暂无用户提交的监控链接</div>';
+    document.getElementById('links-result').style.display = 'block';
+  } catch(e) {
+    alert('加载失败：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📋 查看待监控链接';
+  }
+}
+
+function exportMonitorLinks() {
+  if (!_monitorLinks.length) return;
+  // 构建CSV，包含链接、submittedBy、提交时间、以及数据填写列
+  const BOM = '\uFEFF';
+  const headers = ['链接', 'submittedBy', '提交时间', '商品名称', '销量', '加购', '24h购买', '价格', '店铺', '粉丝', '类目', '日期'];
+  const rows = _monitorLinks.map(m => [
+    m.link, m.fp || '', m.submittedAt || '', '', '', '', '', '', '', '', '', ''
+  ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','));
+  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '监控链接_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportSupplyList(type) {
+  const listId = type === 'buy' ? '_supplyBuyList' : '_supplySellList';
+  const list = window[listId] || [];
+  if (!list.length) { alert('暂无数据'); return; }
+  const BOM = '\uFEFF';
+  let headers, rows;
+  if (type === 'buy') {
+    headers = ['商品名称', '对标链接', '期望价格', '采购量', '备注', '微信号', '提交时间'];
+    rows = list.map(r => [r.name, r.link, r.price, r.qty, r.note, r.wechat, r.submittedAt]
+      .map(v => '"' + String(v||'').replace(/"/g, '""') + '"').join(','));
+  } else {
+    headers = ['货源类目', '品类描述', '供货优势', '备注', '微信号', '提交时间'];
+    rows = list.map(r => [r.type, r.desc, r.advantage, r.note, r.wechat, r.submittedAt]
+      .map(v => '"' + String(v||'').replace(/"/g, '""') + '"').join(','));
+  }
+  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (type === 'buy' ? '货源申请' : '货源登记') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function fixDates() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const btn = document.getElementById('fix-btn');
+  const res_el = document.getElementById('fix-result');
+  btn.disabled = true;
+  btn.textContent = '修复中…';
+  try {
+    const res  = await fetch(WORKER_URL + '/api/fix-dates?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    res_el.style.display = 'block';
+    res_el.style.color = 'var(--teal)';
+    res_el.textContent = '✓ 修复完成，共处理 ' + data.total + ' 个商品的历史日期';
+    btn.textContent = '✓ 已修复';
+  } catch(err) {
+    res_el.style.display = 'block';
+    res_el.style.color = 'var(--red)';
+    res_el.textContent = '✗ 修复失败：' + err.message;
+    btn.disabled = false;
+    btn.textContent = '🔧 一键修复历史日期格式';
+  }
+}
+let _supplyBuyList = [];
+let _supplySellList = [];
+
+// ── 查找合并重复商品 ──
+async function findDuplicates() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const btn = document.getElementById('find-dup-btn');
+  btn.disabled = true;
+  btn.textContent = '扫描中…';
+
+  try {
+    const res  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const products = data.products || [];
+
+    // 按店铺名分组
+    const storeMap = {};
+    products.forEach(p => {
+      const key = (p.store || '未知店铺').trim();
+      if (!storeMap[key]) storeMap[key] = [];
+      storeMap[key].push(p);
+    });
+
+    // 找出同一店铺下有多个商品的
+    const dupGroups = Object.entries(storeMap).filter(([, items]) => items.length > 1);
+
+    const resultEl = document.getElementById('dup-result');
+    const summaryEl = document.getElementById('dup-summary');
+    const listEl = document.getElementById('dup-list');
+    resultEl.style.display = 'block';
+
+    if (!dupGroups.length) {
+      summaryEl.textContent = '✓ 未发现同店铺多商品的情况';
+      listEl.innerHTML = '';
+      return;
+    }
+
+    summaryEl.textContent = '发现 ' + dupGroups.length + ' 家店铺有多条商品记录，请逐一确认是否为重复：';
+
+    listEl.innerHTML = dupGroups.map(([store, items]) => `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;">🏪 ${store}（${items.length} 条记录）</div>
+        ${items.map(item => `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <input type="radio" name="keep-${store.replace(/[^a-z0-9]/gi,'_')}" value="${item.id}"
+              style="margin-top:3px;flex-shrink:0;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;color:var(--text);margin-bottom:3px;word-break:break-all;">${item.name ? item.name.slice(0,50)+'…' : '（无名称）'}</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">
+                销量:${item.sales} · 加购:${item.addCart} · ¥${item.price} · 历史${(item.salesHistory||[]).length}条
+              </div>
+              <div style="font-size:11px;color:var(--text3);word-break:break-all;margin-top:2px;">${item.link}</div>
+            </div>
+          </div>
+        `).join('')}
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;"
+            onclick="mergeGroup('${store.replace(/'/g,"\\'")}', [${items.map(i=>i.id).join(',')}])">
+            🔀 合并（保留选中项，其余历史数据并入后删除）
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch(err) {
+    alert('扫描失败：' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 扫描重复商品';
+  }
+}
+
+async function mergeGroup(store, ids) {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+
+  // 找出选中的主条目
+  const radioName = 'keep-' + store.replace(/[^a-z0-9]/gi,'_');
+  const selected = document.querySelector('input[name="' + radioName + '"]:checked');
+  if (!selected) { alert('请先选择要保留的主条目（点击左侧单选按钮）'); return; }
+  const keepId = parseInt(selected.value);
+  const mergeIds = ids.filter(id => id !== keepId);
+
+  if (!confirm('确认合并？
+
+将保留 ID=' + keepId + ' 的商品，
+把其他 ' + mergeIds.length + ' 条的历史销量数据并入后删除。
+
+此操作不可撤销。')) return;
+
+  try {
+    // 拉取最新数据
+    const res  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const products = data.products || [];
+
+    const keepItem = products.find(p => p.id === keepId);
+    if (!keepItem) throw new Error('找不到主条目');
+
+    // 合并所有历史数据
+    let mergedHist = [...(keepItem.salesHistory || [])];
+    mergeIds.forEach(mid => {
+      const mItem = products.find(p => p.id === mid);
+      if (!mItem) return;
+      (mItem.salesHistory || []).forEach(h => {
+        if (!mergedHist.find(x => x.date === h.date)) {
+          mergedHist.push(h);
+        }
+      });
+    });
+    mergedHist.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 更新主条目历史
+    const editRes = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: keepId, fields: { salesHistory: mergedHist } }),
+    });
+    const editData = await editRes.json();
+    if (!editData.ok) throw new Error(editData.error);
+
+    // 逐个删除重复条目
+    for (const mid of mergeIds) {
+      const delRes = await fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: mid }),
+      });
+      const delData = await delRes.json();
+      if (!delData.ok) throw new Error('删除 ID=' + mid + ' 失败：' + delData.error);
+    }
+
+    alert('✓ 合并完成！已将 ' + mergeIds.length + ' 条重复记录的历史数据并入主条目，并删除重复项。');
+    findDuplicates(); // 刷新列表
+  } catch(err) {
+    alert('合并失败：' + err.message);
+  }
+}
+// ── End 查找合并重复商品 ──
+
+// ── 删除某天历史记录 ──
+async function deleteHistoryDate() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const link = document.getElementById('del-hist-link').value.trim();
+  const date = document.getElementById('del-hist-date').value.trim();
+  if (!link) { alert('请输入商品链接'); return; }
+  if (!date) { alert('请选择要删除的日期'); return; }
+
+  const resEl = document.getElementById('del-hist-result');
+  const btn   = document.getElementById('del-hist-btn');
+  btn.disabled = true;
+  btn.textContent = '处理中…';
+  resEl.style.display = 'none';
+
+  try {
+    // 拉取全量商品找到对应商品
+    const listRes  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const listData = await listRes.json();
+    if (!listData.ok) throw new Error(listData.error);
+
+    const item = (listData.products || []).find(p => p.link.trim() === link.trim());
+    if (!item) {
+      showDelHistResult('⚠️ 未找到该链接对应的商品，请检查链接是否完整', 'warn');
+      return;
+    }
+
+    const hist = item.salesHistory || [];
+    const before = hist.length;
+    // 同时兼容 YYYY-MM-DD 和 YYYY.M.D 格式
+    const filtered = hist.filter(h => {
+      const normalized = h.date.replace(/\./g, '-').replace(/-(\d)-/g, '-0$1-').replace(/-(\d)$/, '-0$1');
+      return normalized !== date;
+    });
+
+    if (filtered.length === before) {
+      showDelHistResult('⚠️ 该商品在 ' + date + ' 没有历史记录', 'warn');
+      return;
+    }
+
+    if (!confirm('确认删除「' + (item.name || link).slice(0, 30) + '…」\n' + date + ' 的销量记录？\n\n此操作不可撤销')) return;
+
+    // 用 edit 接口更新 salesHistory
+    const res = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, fields: { salesHistory: filtered } }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    showDelHistResult('✓ 已删除 ' + date + ' 的记录，该商品还剩 ' + filtered.length + ' 条历史数据', 'ok');
+    document.getElementById('del-hist-link').value = '';
+    document.getElementById('del-hist-date').value = '';
+  } catch(err) {
+    showDelHistResult('✗ 操作失败：' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑️ 删除该天记录';
+  }
+}
+
+function showDelHistResult(msg, type) {
+  const el = document.getElementById('del-hist-result');
+  const styles = {
+    ok:   { bg: 'rgba(0,201,167,0.1)',   color: 'var(--teal)', border: 'rgba(0,201,167,0.3)' },
+    warn: { bg: 'rgba(255,214,10,0.1)',  color: 'var(--gold)', border: 'rgba(255,214,10,0.3)' },
+    err:  { bg: 'rgba(255,45,85,0.1)',   color: 'var(--red)',  border: 'rgba(255,45,85,0.3)' },
+  };
+  const s = styles[type] || styles.err;
+  el.style.background = s.bg;
+  el.style.color = s.color;
+  el.style.border = '1px solid ' + s.border;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ── 按链接删除商品 ──
+async function deleteByLink() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const link = document.getElementById('del-link-input').value.trim();
+  if (!link) { alert('请输入商品链接'); return; }
+
+  const resEl = document.getElementById('del-link-result');
+  const btn   = document.getElementById('del-link-btn');
+  btn.disabled = true;
+  btn.textContent = '查找中…';
+  resEl.style.display = 'none';
+
+  try {
+    // 先拉取全量商品，找到对应 id
+    const listRes  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const listData = await listRes.json();
+    if (!listData.ok) throw new Error(listData.error);
+
+    const item = (listData.products || []).find(p => p.link.trim() === link.trim());
+    if (!item) {
+      resEl.style.background = 'rgba(255,214,10,0.1)';
+      resEl.style.color = 'var(--gold)';
+      resEl.style.border = '1px solid rgba(255,214,10,0.3)';
+      resEl.textContent = '⚠️ 未找到该链接对应的商品，请检查链接是否完整';
+      resEl.style.display = 'block';
+      return;
+    }
+
+    if (!confirm('确认删除商品：\n\n「' + (item.name || item.link).slice(0, 50) + '…」\n\n此操作不可撤销')) return;
+
+    const delRes  = await fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id }),
+    });
+    const delData = await delRes.json();
+    if (!delData.ok) throw new Error(delData.error);
+
+    resEl.style.background = 'rgba(0,201,167,0.1)';
+    resEl.style.color = 'var(--teal)';
+    resEl.style.border = '1px solid rgba(0,201,167,0.3)';
+    resEl.textContent = '✓ 已删除商品：' + (item.name || link).slice(0, 40) + '（当前共 ' + delData.total + ' 条商品）';
+    resEl.style.display = 'block';
+    document.getElementById('del-link-input').value = '';
+  } catch(err) {
+    resEl.style.background = 'rgba(255,45,85,0.1)';
+    resEl.style.color = 'var(--red)';
+    resEl.style.border = '1px solid rgba(255,45,85,0.3)';
+    resEl.textContent = '✗ 删除失败：' + err.message;
+    resEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑️ 删除商品';
+  }
+}
+
+async function loadSupplyBuy() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const btn = document.getElementById('supply-buy-btn');
+  btn.disabled = true;
+  btn.textContent = '加载中…';
+  try {
+    const res = await fetch(WORKER_URL + '/api/get-supply?type=buy&auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    _supplyBuyList = data.list || [];
+    document.getElementById('supply-buy-count').textContent = `共 ${_supplyBuyList.length} 条申请`;
+    document.getElementById('supply-buy-list').innerHTML = _supplyBuyList.length ? _supplyBuyList.map(r => `
+      <div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.8;">
+        <div><span style="color:var(--text3)">商品名称：</span>${r.name || '-'}</div>
+        <div><span style="color:var(--text3)">对标链接：</span>${r.link || '-'}</div>
+        <div><span style="color:var(--text3)">期望价格：</span>${r.price || '-'} &nbsp; 采购量：${r.qty || '-'}</div>
+        <div><span style="color:var(--text3)">备注：</span>${r.note || '-'}</div>
+        <div><span style="color:var(--text3)">微信号：</span><strong style="color:#a855f7">${r.wechat || '-'}</strong></div>
+        <div><span style="color:var(--text3)">提交时间：</span>${r.submittedAt || '-'}</div>
+      </div>
+    `).join('') : '<div style="color:var(--text3);text-align:center;padding:20px;">暂无申请</div>';
+    document.getElementById('supply-buy-result').style.display = 'block';
+    btn.textContent = '📋 查看货源申请';
+    btn.disabled = false;
+  } catch(err) {
+    alert('加载失败：' + err.message);
+    btn.disabled = false;
+    btn.textContent = '📋 查看货源申请';
+  }
+}
+
+async function loadSupplySell() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+  const btn = document.getElementById('supply-sell-btn');
+  btn.disabled = true;
+  btn.textContent = '加载中…';
+  try {
+    const res = await fetch(WORKER_URL + '/api/get-supply?type=sell&auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    _supplySellList = data.list || [];
+    document.getElementById('supply-sell-count').textContent = `共 ${_supplySellList.length} 条登记`;
+    document.getElementById('supply-sell-list').innerHTML = _supplySellList.length ? _supplySellList.map(r => `
+      <div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.8;">
+        <div><span style="color:var(--text3)">货源类目：</span>${r.type || '-'}</div>
+        <div><span style="color:var(--text3)">品类描述：</span>${r.desc || '-'}</div>
+        <div><span style="color:var(--text3)">供货优势：</span>${r.advantage || '-'}</div>
+        <div><span style="color:var(--text3)">备注：</span>${r.note || '-'}</div>
+        <div><span style="color:var(--text3)">微信号：</span><strong style="color:#a855f7">${r.wechat || '-'}</strong></div>
+        <div><span style="color:var(--text3)">提交时间：</span>${r.submittedAt || '-'}</div>
+      </div>
+    `).join('') : '<div style="color:var(--text3);text-align:center;padding:20px;">暂无登记</div>';
+    document.getElementById('supply-sell-result').style.display = 'block';
+    btn.textContent = '📋 查看货源登记';
+    btn.disabled = false;
+  } catch(err) {
+    alert('加载失败：' + err.message);
+    btn.disabled = false;
+    btn.textContent = '📋 查看货源登记';
+  }
+}
+</script>
+</body>
+</html>
