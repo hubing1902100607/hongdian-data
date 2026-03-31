@@ -823,10 +823,11 @@ async function batchMergeAll() {
     else groups[name].deleteIds.push(parseInt(b.value));
   });
 
-  const toProcess = Object.values(groups).filter(g => g.deleteIds.length > 0);
-  if (!toProcess.length) { alert('没有需要删除的记录，请取消勾选要删除的商品'); return; }
+  // 只处理：有勾选（保留）且有未勾选（删除）的分组，两者都要有
+  const toProcess = Object.values(groups).filter(g => g.keepIds.length > 0 && g.deleteIds.length > 0);
+  if (!toProcess.length) { alert('没有需要处理的分组。\n\n请在要处理的分组里勾选要保留的条目，未勾选的将被删除。'); return; }
 
-  const totalDelete = toProcess.reduce((sum, g) => sum + g.allIds.filter(id => id !== g.keepId).length, 0);
+  const totalDelete = toProcess.reduce((sum, g) => sum + g.deleteIds.length, 0);
   if (!confirm('确认批量执行？\n\n共 ' + toProcess.length + ' 个分组，将删除 ' + totalDelete + ' 条重复记录。\n\n此操作不可撤销。')) return;
 
   let successCount = 0, errorCount = 0;
