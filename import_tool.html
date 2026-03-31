@@ -752,7 +752,7 @@ async function findDuplicates() {
         <div style="margin-top:10px;display:flex;gap:8px;">
           <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;"
             onclick="mergeGroup('${store.replace(/'/g,"\\'")}', [${items.map(i=>i.id).join(',')}])">
-            🔀 合并（保留选中项，其余历史数据并入后删除）
+            ✓ 保留选中项，删除其余重复记录
           </button>
         </div>
       </div>
@@ -775,57 +775,26 @@ async function mergeGroup(store, ids) {
   const selected = document.querySelector('input[name="' + radioName + '"]:checked');
   if (!selected) { alert('请先选择要保留的主条目（点击左侧单选按钮）'); return; }
   const keepId = parseInt(selected.value);
-  const mergeIds = ids.filter(id => id !== keepId);
+  const deleteIds = ids.filter(id => id !== keepId);
 
-  if (!confirm('确认合并？\n\n将保留选中商品，把其他 ' + mergeIds.length + ' 条的历史销量数据并入后删除。\n\n此操作不可撤销。')) return;
+  if (!confirm('确认操作？\n\n将保留选中的商品，删除其他 ' + deleteIds.length + ' 条重复记录。\n\n此操作不可撤销。')) return;
 
   try {
-    // 拉取最新数据
-    const res  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error);
-    const products = data.products || [];
-
-    const keepItem = products.find(p => p.id === keepId);
-    if (!keepItem) throw new Error('找不到主条目');
-
-    // 合并所有历史数据
-    let mergedHist = [...(keepItem.salesHistory || [])];
-    mergeIds.forEach(mid => {
-      const mItem = products.find(p => p.id === mid);
-      if (!mItem) return;
-      (mItem.salesHistory || []).forEach(h => {
-        if (!mergedHist.find(x => x.date === h.date)) {
-          mergedHist.push(h);
-        }
-      });
-    });
-    mergedHist.sort((a, b) => a.date.localeCompare(b.date));
-
-    // 更新主条目历史
-    const editRes = await fetch(WORKER_URL + '/api/edit?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: keepId, fields: { salesHistory: mergedHist } }),
-    });
-    const editData = await editRes.json();
-    if (!editData.ok) throw new Error(editData.error);
-
     // 逐个删除重复条目
-    for (const mid of mergeIds) {
+    for (const did of deleteIds) {
       const delRes = await fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: mid }),
+        body: JSON.stringify({ id: did }),
       });
       const delData = await delRes.json();
-      if (!delData.ok) throw new Error('删除 ID=' + mid + ' 失败：' + delData.error);
+      if (!delData.ok) throw new Error('删除 ID=' + did + ' 失败：' + delData.error);
     }
 
-    alert('✓ 合并完成！已将 ' + mergeIds.length + ' 条重复记录的历史数据并入主条目，并删除重复项。');
+    alert('✓ 完成！已保留选中商品，删除了 ' + deleteIds.length + ' 条重复记录。');
     findDuplicates(); // 刷新列表
   } catch(err) {
-    alert('合并失败：' + err.message);
+    alert('操作失败：' + err.message);
   }
 }
 // ── End 查找合并重复商品 ──
