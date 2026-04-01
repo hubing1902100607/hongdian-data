@@ -1426,13 +1426,11 @@ const CAT_STYLES = {
 
 function getFingerprint() {
   const raw = [
-    navigator.userAgent,
-    navigator.language,
     screen.width + 'x' + screen.height,
     screen.colorDepth,
     Intl.DateTimeFormat().resolvedOptions().timeZone,
     navigator.hardwareConcurrency || '',
-    navigator.platform || '',
+    navigator.language,
   ].join('|');
   let h = 5381;
   for (let i = 0; i < raw.length; i++) {
