@@ -1615,41 +1615,19 @@ function doFirstActivate() {
   const val = document.getElementById('login-input').value.trim().toUpperCase();
   if (!val) { showLoginError('login-error', '请输入激活码'); return; }
 
-  // 管理员走登录流程
+  // 管理员直接进入
   if (val === ADMIN_PASSWORD.toUpperCase()) {
     saveSession('admin', null, null, null);
     loadProductsAndEnter('admin', null);
     return;
   }
 
-  const btn = document.getElementById('btn-submit');
-  btn.textContent = '验证中…'; btn.disabled = true;
+  // 本地验证激活码格式和有效期
+  const localResult = verifyActivationCode(val);
+  if (!localResult.valid) { showLoginError('login-error', localResult.error); return; }
 
-  fetch(WORKER_URL + '/api/set-password', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: val, password: '______' }) // 先探测，后面弹窗再真正设置
-  })
-  .then(r => r.json())
-  .then(data => {
-    btn.textContent = '确认激活'; btn.disabled = false;
-    // 如果提示已设置过密码，引导用户去登录
-    if (!data.ok && data.error && data.error.includes('已设置过密码')) {
-      showLoginError('login-error', '此激活码已激活，请点「登录」输入密码登录');
-      return;
-    }
-    // 先本地验证激活码格式
-    const localResult = verifyActivationCode(val);
-    if (!localResult.valid) { showLoginError('login-error', localResult.error); return; }
-    // 弹出设置密码弹窗
-    openSetPasswordModal(val, localResult);
-  })
-  .catch(() => {
-    btn.textContent = '确认激活'; btn.disabled = false;
-    // 网络失败，先本地验证激活码
-    const localResult = verifyActivationCode(val);
-    if (!localResult.valid) { showLoginError('login-error', localResult.error); return; }
-    openSetPasswordModal(val, localResult);
-  });
+  // 直接弹出设置密码弹窗，不再提前探测
+  openSetPasswordModal(val, localResult);
 }
 
 // ── 登录 ──
