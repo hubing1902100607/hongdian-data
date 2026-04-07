@@ -940,34 +940,32 @@
   <div style="width:100%;max-width:380px;padding:0 24px;">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 24px;">
 
-      <!-- 产品信息码展示 -->
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">你的产品信息码</div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div id="product-code-display" style="font-size:20px;font-weight:500;font-family:var(--mono);letter-spacing:.12em;color:var(--text);flex:1;">--------</div>
-          <button onclick="copyProductCode()" id="copy-btn"
-            style="padding:6px 12px;background:var(--bg);border:1px solid var(--border-b);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap;transition:all .15s;">
-            复制
-          </button>
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">
-          购买时请将此码发送给客服，激活码将与此码绑定
-        </div>
-      </div>
+
 
       <!-- 激活码输入 -->
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">输入激活码</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">激活码</div>
       <input id="login-input" type="text" placeholder="请输入激活码"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:10px;box-sizing:border-box;letter-spacing:.08em;text-transform:uppercase;"
-        onkeydown="if(event.key==='Enter')tryLogin()"
-        oninput="this.value=this.value.toUpperCase();hideLoginError('login-error')">
+        oninput="this.value=this.value.toUpperCase();hideLoginError('login-error')"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pwd-input').focus()">
+
+      <!-- 密码输入框 -->
+      <div style="margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">密码</div>
+        <input id="login-pwd-input" type="password" placeholder="请输入密码"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+
       <div id="login-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;padding:8px 10px;background:var(--red-dim);border-radius:6px;"></div>
-      <button onclick="tryLogin()"
-        style="width:100%;padding:12px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;">
-        激活
+
+      <button onclick="doLogin()" id="btn-submit"
+        style="width:100%;padding:12px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;margin-bottom:14px;">
+        登录
       </button>
-      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.8;">
-        激活码与设备绑定，一经激活无法更换设备<br>
+
+      <div style="font-size:11px;color:var(--text3);text-align:center;line-height:1.8;">
+        激活码即你的账号，请妥善保存<br>
         购买/续费请关注公众号：<b style="color:var(--text2)">北苑笔谈</b>
       </div>
     </div>
@@ -983,6 +981,13 @@
 <!-- App Root -->
 <div id="app-root" style="display:none;">
 
+<!-- 初始密码提示条 -->
+<div id="default-pwd-tip" style="display:none;background:rgba(255,149,0,0.12);border-bottom:1px solid rgba(255,149,0,0.25);padding:10px 20px;font-size:12px;color:#ff9500;display:none;align-items:center;gap:10px;">
+  <span>⚠️ 你正在使用初始密码 123456，建议修改密码保护账号安全</span>
+  <button onclick="openChangePwdModal()" style="padding:4px 12px;background:rgba(255,149,0,0.2);border:1px solid rgba(255,149,0,0.4);border-radius:4px;color:#ff9500;font-size:11px;font-family:var(--font);cursor:pointer;">立即修改</button>
+  <button onclick="document.getElementById('default-pwd-tip').style.display='none'" style="margin-left:auto;background:none;border:none;color:#ff9500;font-size:16px;cursor:pointer;padding:0 4px;">×</button>
+</div>
+
 <header>
   <div class="logo">
     <div class="logo-icon">🌸</div>
@@ -996,10 +1001,15 @@
       <button class="import-btn" onclick="openImportModal()">📥 导入数据</button>
     </span>
     <div class="month-badge">2025 / 03</div>
+    <div id="account-badge" style="display:none;align-items:center;gap:6px;padding:5px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--text2);">
+      <span id="account-badge-text"></span>
+      <button onclick="copyAccountCode()" style="padding:2px 7px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:10px;font-family:var(--mono);cursor:pointer;">复制</button>
+    </div>
     <div id="trial-badge" style="display:none;padding:6px 12px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--gold);"></div>
     <div id="expiry-badge" style="display:none;padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
     <div id="expiry-badge" style="display:none;padding:6px 12px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--teal);"></div>
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
+    <button onclick="openChangePwdModal()" id="change-pwd-btn" style="display:none;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">🔑 改密码</button>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
     <span id="monitor-btn-wrap" style="display:none;">
       <button onclick="openMonitorModal()" style="padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">📡 我的监控</button>
@@ -1447,11 +1457,103 @@ function formatProductCode(fp) {
 
 const DEVICE_FP = getFingerprint();
 
+// 自动填入上次使用的激活码
+(function() {
+  try {
+    const s = JSON.parse(localStorage.getItem('hd_session'));
+    if (s && s.code) {
+      const input = document.getElementById('login-input');
+      if (input) input.value = s.code;
+    }
+  } catch(e) {}
+})();
+
 // 页面加载时显示产品码
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('product-code-display');
   if (el) el.textContent = formatProductCode(DEVICE_FP);
 });
+
+// ── 修改密码弹窗 ──
+function openChangePwdModal() {
+  const code = loadSession()?.code || '';
+  if (!code) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'change-pwd-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;margin:0 20px;">
+      <div style="font-size:16px;font-weight:500;margin-bottom:16px;">🔑 修改密码</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">原密码</div>
+      <input id="chpwd-old" type="password" placeholder="请输入原密码"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:12px;box-sizing:border-box;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">新密码（6位数字）</div>
+      <input id="chpwd-new1" type="password" maxlength="6" placeholder="请输入新密码"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:10px;box-sizing:border-box;"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <input id="chpwd-new2" type="password" maxlength="6" placeholder="再次输入新密码"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:10px;box-sizing:border-box;"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <div id="chpwd-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;padding:8px 10px;background:var(--red-dim);border-radius:6px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('change-pwd-overlay').remove()"
+          style="flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;font-family:var(--font);cursor:pointer;">取消</button>
+        <button id="chpwd-submit-btn" onclick="submitChangePassword('${code}')"
+          style="flex:1;padding:11px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;">确认修改</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('chpwd-old')?.focus(), 100);
+}
+
+function submitChangePassword(code) {
+  const oldPwd = document.getElementById('chpwd-old').value.trim();
+  const newPwd1 = document.getElementById('chpwd-new1').value.trim();
+  const newPwd2 = document.getElementById('chpwd-new2').value.trim();
+  const errEl = document.getElementById('chpwd-error');
+  errEl.style.display = 'none';
+
+  if (!oldPwd) { errEl.textContent = '请输入原密码'; errEl.style.display = 'block'; return; }
+  if (newPwd1.length < 6) { errEl.textContent = '新密码至少6位数字'; errEl.style.display = 'block'; return; }
+  if (newPwd1 !== newPwd2) { errEl.textContent = '两次输入的新密码不一致'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('chpwd-submit-btn');
+  btn.textContent = '修改中…'; btn.disabled = true;
+
+  fetch(WORKER_URL + '/api/change-password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, old_password: oldPwd, new_password: newPwd1 })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.textContent = '确认修改'; btn.disabled = false;
+    if (!data.ok) { errEl.textContent = data.error || '修改失败'; errEl.style.display = 'block'; return; }
+    document.getElementById('change-pwd-overlay')?.remove();
+    localStorage.removeItem('hd_using_default_pwd');
+    document.getElementById('default-pwd-tip').style.display = 'none';
+    alert('✓ 密码修改成功，下次登录请使用新密码');
+  })
+  .catch(() => {
+    btn.textContent = '确认修改'; btn.disabled = false;
+    errEl.textContent = '网络异常，请重试'; errEl.style.display = 'block';
+  });
+}
+
+function copyAccountCode() {
+  const code = loadSession()?.code || '';
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('#account-badge button');
+    if (btn) { btn.textContent = '已复制'; setTimeout(() => btn.textContent = '复制', 1500); }
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    const btn = document.querySelector('#account-badge button');
+    if (btn) { btn.textContent = '已复制'; setTimeout(() => btn.textContent = '复制', 1500); }
+  });
+}
 
 function copyProductCode() {
   const code = formatProductCode(DEVICE_FP);
@@ -1512,11 +1614,6 @@ function verifyActivationCode(rawCode) {
     return { valid: false, error: '激活码无效，请联系客服' };
   }
 
-  // Verify device fingerprint
-  if (fp !== DEVICE_FP) {
-    return { valid: false, error: '此激活码已绑定其他设备，无法在本设备使用' };
-  }
-
   // Parse expiry YYYYMMDD → YYYY-MM-DD
   const expiryDate = expiryCompact.slice(0,4) + '-' + expiryCompact.slice(4,6) + '-' + expiryCompact.slice(6,8);
   if (new Date(expiryDate) < new Date(new Date().toDateString())) {
@@ -1539,46 +1636,51 @@ function showLoginError(id, msg) {
   setTimeout(() => { el.style.display = 'none'; }, 4500);
 }
 
-function tryLogin() {
-  const val = document.getElementById('login-input').value.trim();
-  if (!val) return;
+// ── 登录 ──
+function doLogin() {
+  const val = document.getElementById('login-input').value.trim().toUpperCase();
+  if (!val) { showLoginError('login-error', '请输入激活码'); return; }
 
-  const btn = document.querySelector('#login-screen button[onclick="tryLogin()"]');
-  if (btn) { btn.textContent = '验证中…'; btn.disabled = true; }
+  const pwd = document.getElementById('login-pwd-input').value.trim();
+  if (!pwd) { showLoginError('login-error', '请输入密码'); return; }
 
-  fetch(WORKER_URL + '/api/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: val, fp: DEVICE_FP })
+  // 管理员直接进入
+  if (val === ADMIN_PASSWORD.toUpperCase()) {
+    saveSession('admin', null, null, null);
+    loadProductsAndEnter('admin', null);
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.textContent = '验证中…'; btn.disabled = true;
+
+  fetch(WORKER_URL + '/api/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: val, password: pwd })
   })
   .then(r => r.json())
   .then(data => {
-    if (btn) { btn.textContent = '激活'; btn.disabled = false; }
-    if (!data.ok) {
-      showLoginError('login-error', data.error || '激活失败，请重试');
-      return;
-    }
-    // 从本地解析plan
+    btn.textContent = '登录'; btn.disabled = false;
+    if (!data.ok) { showLoginError('login-error', data.error || '登录失败，请重试'); return; }
     const localResult = verifyActivationCode(val);
-    const plan = localResult.valid ? localResult.plan : null;
-    saveSession(data.role, val.toUpperCase(), data.expiry, plan);
-    loadProductsAndEnter(data.role, val.toUpperCase());
+    const plan = localResult.valid ? localResult.plan : (data.plan || null);
+    saveSession(data.role, val, data.expiry, plan);
+    // 保存token
+    if (data.token) localStorage.setItem('hd_token', data.token);
+    // 记录是否使用初始密码，用于提示修改
+    if (pwd === '123456') localStorage.setItem('hd_using_default_pwd', '1');
+    else localStorage.removeItem('hd_using_default_pwd');
+    loadProductsAndEnter(data.role, val);
   })
   .catch(() => {
-    if (btn) { btn.textContent = '激活'; btn.disabled = false; }
-    // 网络失败时降级到本地验证
-    const isAdmin = val.toUpperCase() === ADMIN_PASSWORD.toUpperCase();
-    if (isAdmin) {
-      saveSession('admin', null, null);
-      loadProductsAndEnter('admin', null);
-      return;
-    }
-    const result = verifyActivationCode(val);
-    if (!result.valid) { showLoginError('login-error', result.error); return; }
-    saveSession('user', val.toUpperCase(), result.expiry, result.plan);
-    loadProductsAndEnter('user', val.toUpperCase());
+    btn.textContent = '登录'; btn.disabled = false;
+    showLoginError('login-error', '网络异常，请检查网络后重试');
   });
 }
+
+// 兼容旧的 tryLogin 调用
+function tryLogin() { doLogin(); }
+function doFirstActivate() { doLogin(); }
 
 function loadProductsAndEnter(role, code) {
   const auth = role === 'admin' ? ADMIN_PASSWORD : (code || '');
@@ -1603,7 +1705,7 @@ function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
 }
 function saveSession(role, code, expiry, plan) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ role, code, expiry, plan: plan || null, fp: DEVICE_FP, ts: Date.now() }));
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ role, code, expiry, plan: plan || null, ts: Date.now() }));
 }
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
@@ -1612,8 +1714,6 @@ function isSessionValid(session) {
   if (!session) return false;
   if (session.role === 'admin') return true;
   if (!session.expiry) return false;
-  // Device fingerprint must still match
-  if (session.fp && session.fp !== DEVICE_FP) return false;
   return new Date(session.expiry) >= new Date(new Date().toDateString());
 }
 
@@ -1623,6 +1723,23 @@ function enterApp(role) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = 'block';
   document.getElementById('import-btn-wrap').style.display  = role === 'admin' ? '' : 'none';
+  // 显示账号
+  const _acct = loadSession()?.code || '';
+  const _acctBadge = document.getElementById('account-badge');
+  if (_acct && role !== 'admin') {
+    document.getElementById('account-badge-text').textContent = '账号：' + _acct;
+    _acctBadge.style.display = 'flex';
+  } else {
+    _acctBadge.style.display = 'none';
+  }
+  // 显示修改密码按钮（普通用户）
+  const _changePwdBtn = document.getElementById('change-pwd-btn');
+  if (_changePwdBtn) _changePwdBtn.style.display = role === 'user' ? '' : 'none';
+  // 初始密码提示条
+  const _tipBar = document.getElementById('default-pwd-tip');
+  if (_tipBar && role === 'user' && localStorage.getItem('hd_using_default_pwd') === '1') {
+    _tipBar.style.display = 'flex';
+  }
   document.getElementById('monitor-btn-wrap').style.display = role === 'user'  ? '' : 'none';
   document.getElementById('score-btn-wrap').style.display   = '';
   document.getElementById('supply-btn-wrap').style.display  = '';
@@ -1715,6 +1832,7 @@ document.addEventListener('keydown', e => {
 
 function handleLogout() {
   clearSession();
+  localStorage.removeItem('hd_token');
   currentRole = null;
   document.getElementById('app-root').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
@@ -1878,8 +1996,10 @@ function fetchLatestProducts(session, retryCount) {
   retryCount = retryCount || 0;
   const auth = session.role === 'admin' ? ADMIN_PASSWORD : (session.code || '');
 
+  const _token = localStorage.getItem('hd_token') || '';
+  const _tokenParam = _token ? '&token=' + encodeURIComponent(_token) : '';
   fetchWithTimeout(
-    WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth) + '&fp=' + encodeURIComponent(DEVICE_FP),
+    WORKER_URL + '/api/products?auth=' + encodeURIComponent(auth) + '&fp=' + encodeURIComponent(DEVICE_FP) + _tokenParam,
     10000
   )
   .then(r => {
@@ -1887,6 +2007,14 @@ function fetchLatestProducts(session, retryCount) {
     return r.json();
   })
   .then(data => {
+    if (!data.ok && data.code === 'TOKEN_INVALID') {
+      clearSession();
+      localStorage.removeItem('hd_token');
+      alert('你的账号已在其他设备登录，请重新登录。');
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app-root').style.display = 'none';
+      return;
+    }
     if (data.ok && data.products && data.products.length) {
       RAW_DATA.length = 0;
       data.products.forEach(p => RAW_DATA.push(p));
