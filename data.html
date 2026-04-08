@@ -1402,7 +1402,6 @@ let _iTimer             = null;    // 管理员快捷键计时器
 //  全局配置常量区（置顶，防止 TDZ 报错）
 // ══════════════════════════════════════════════════════════
 const ADMIN_PASSWORD = 'qwer123';
-const HMAC_SECRET    = 'hd_bynb_2025_secret_key';
 const SESSION_KEY    = 'hd_session';
 const WORKER_URL     = 'https://1413969452-8uv87lps3h.ap-guangzhou.tencentscf.com';
 const DATA_KEY       = 'hd_raw_data';
@@ -1570,58 +1569,7 @@ function copyProductCode() {
   });
 }
 
-// ── 激活码验证 ────────────────────────────────────────────
-// 激活码格式（由生成器产生）：
-//   FP-PLAN-YYYYMMDD-HMAC
-//   例：1D80D2ED-M-20260419-4D302397
-//
-// plan: M=月度 Q=季度 Y=年度
-// HMAC: djb2(fp + plan + expiry + secret) 前8位大写hex
-
-function djb2(str) {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) + h) ^ str.charCodeAt(i);
-    h = h >>> 0;
-  }
-  return h.toString(16).toUpperCase().padStart(8, '0');
-}
-
-function verifyActivationCode(rawCode) {
-  const code = rawCode.replace(/\s/g, '').toUpperCase();
-
-  // Admin bypass
-  if (rawCode === ADMIN_PASSWORD) {
-    return { valid: true, role: 'admin', expiry: null };
-  }
-
-  // Format: FP-PLAN-YYYYMMDD-HMAC
-  const parts = code.split('-');
-  if (parts.length !== 4) {
-    return { valid: false, error: '激活码格式错误，请检查后重试' };
-  }
-
-  const [fp, plan, expiryCompact, hmac] = parts;
-
-  if (fp.length !== 8 || !['M','Q','Y'].includes(plan) ||
-      expiryCompact.length !== 8 || hmac.length !== 8) {
-    return { valid: false, error: '激活码格式错误，请检查后重试' };
-  }
-
-  // Verify HMAC
-  const expected = djb2(fp + plan + expiryCompact + HMAC_SECRET);
-  if (hmac !== expected) {
-    return { valid: false, error: '激活码无效，请联系客服' };
-  }
-
-  // Parse expiry YYYYMMDD → YYYY-MM-DD
-  const expiryDate = expiryCompact.slice(0,4) + '-' + expiryCompact.slice(4,6) + '-' + expiryCompact.slice(6,8);
-  if (new Date(expiryDate) < new Date(new Date().toDateString())) {
-    return { valid: false, error: `订阅已于 ${expiryDate} 到期，请联系客服续费` };
-  }
-
-  return { valid: true, role: 'user', plan, expiry: expiryDate };
-}
+// ── 激活码验证（已移至后端，前端不再做本地验证）──
 
 // ── Login helpers ─────────────────────────────────────────
 function hideLoginError(id) {
@@ -1662,9 +1610,7 @@ function doLogin() {
   .then(data => {
     btn.textContent = '登录'; btn.disabled = false;
     if (!data.ok) { showLoginError('login-error', data.error || '登录失败，请重试'); return; }
-    const localResult = verifyActivationCode(val);
-    const plan = localResult.valid ? localResult.plan : (data.plan || null);
-    saveSession(data.role, val, data.expiry, plan);
+    saveSession(data.role, val, data.expiry, data.plan || null);
     // 保存token
     if (data.token) localStorage.setItem('hd_token', data.token);
     // 记录是否使用初始密码，用于提示修改
