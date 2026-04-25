@@ -206,13 +206,26 @@ tr:last-child td{border-bottom:none;}
     <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
       当商品链接失效无法更新数据时，粘贴链接后点击删除，即可将该商品从选品页面移除。
     </div>
+
+    <!-- 单条删除 -->
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">单条删除</div>
     <div style="display:flex;gap:10px;margin-bottom:10px;">
       <input type="text" id="del-link-input" placeholder="粘贴失效的商品链接，如 https://xhslink.com/m/xxx"
         style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;"
         onfocus="this.style.borderColor='var(--border-b)'" onblur="this.style.borderColor='var(--border)'">
       <button class="btn btn-primary" onclick="deleteByLink()" id="del-link-btn" style="background:var(--red);white-space:nowrap;">🗑️ 删除商品</button>
     </div>
-    <div id="del-link-result" style="display:none;font-size:12px;font-family:var(--mono);padding:8px 12px;border-radius:6px;margin-top:4px;"></div>
+    <div id="del-link-result" style="display:none;font-size:12px;font-family:var(--mono);padding:8px 12px;border-radius:6px;margin-top:4px;margin-bottom:16px;"></div>
+
+    <!-- 批量删除 -->
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">批量删除（每行一个链接）</div>
+    <textarea id="del-bulk-input" placeholder="每行粘贴一个商品链接，例：&#10;https://xhslink.com/m/aaa&#10;https://xhslink.com/m/bbb&#10;https://xhslink.com/m/ccc"
+      style="width:100%;height:120px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;resize:vertical;box-sizing:border-box;line-height:1.7;"
+      onfocus="this.style.borderColor='var(--border-b)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <button class="btn btn-primary" onclick="deleteBulkByLink()" id="del-bulk-btn" style="background:var(--red);">🗑️ 批量删除</button>
+    </div>
+    <div id="del-bulk-result" style="display:none;font-size:12px;font-family:var(--mono);padding:8px 12px;border-radius:6px;margin-top:8px;line-height:1.8;"></div>
   </div>
 
   <!-- 删除某天历史记录 -->
@@ -987,6 +1000,80 @@ async function deleteByLink() {
   } finally {
     btn.disabled = false;
     btn.textContent = '🗑️ 删除商品';
+  }
+}
+
+// ── 批量按链接删除 ──
+async function deleteBulkByLink() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd !== ADMIN_PASSWORD) { alert('请先输入正确的管理员密码'); return; }
+
+  const raw = document.getElementById('del-bulk-input').value.trim();
+  if (!raw) { alert('请输入至少一个商品链接'); return; }
+
+  const links = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (links.length === 0) { alert('未检测到有效链接'); return; }
+  if (!confirm('确认批量删除 ' + links.length + ' 个链接对应的商品？\n\n此操作不可撤销')) return;
+
+  const resEl = document.getElementById('del-bulk-result');
+  const btn   = document.getElementById('del-bulk-btn');
+  btn.disabled = true;
+  btn.textContent = '处理中…';
+  resEl.style.display = 'none';
+
+  try {
+    // 拉取全量商品
+    const listRes  = await fetch(WORKER_URL + '/api/products?auth=' + encodeURIComponent(ADMIN_PASSWORD));
+    const listData = await listRes.json();
+    if (!listData.ok) throw new Error(listData.error);
+    const products = listData.products || [];
+
+    const succeeded = [], notFound = [], failed = [];
+
+    for (const link of links) {
+      const item = products.find(p => p.link && p.link.trim() === link);
+      if (!item) { notFound.push(link); continue; }
+      try {
+        const delRes  = await fetch(WORKER_URL + '/api/delete?auth=' + encodeURIComponent(ADMIN_PASSWORD), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id }),
+        });
+        const delData = await delRes.json();
+        if (!delData.ok) throw new Error(delData.error);
+        succeeded.push(item.name || link);
+        // 同步更新本地列表，避免重复查找
+        const idx = products.findIndex(p => p.id === item.id);
+        if (idx !== -1) products.splice(idx, 1);
+      } catch(e) {
+        failed.push(link);
+      }
+    }
+
+    // 生成结果摘要
+    let summary = '';
+    if (succeeded.length) summary += '✓ 成功删除 ' + succeeded.length + ' 个商品\n';
+    if (notFound.length)  summary += '⚠️ 未找到 ' + notFound.length + ' 个链接\n';
+    if (failed.length)    summary += '✗ 删除失败 ' + failed.length + ' 个\n';
+
+    const hasError = notFound.length > 0 || failed.length > 0;
+    resEl.style.background = hasError ? 'rgba(255,214,10,0.08)' : 'rgba(0,201,167,0.1)';
+    resEl.style.color = hasError ? 'var(--gold)' : 'var(--teal)';
+    resEl.style.border = '1px solid ' + (hasError ? 'rgba(255,214,10,0.3)' : 'rgba(0,201,167,0.3)');
+    resEl.style.whiteSpace = 'pre-wrap';
+    resEl.textContent = summary.trim();
+    resEl.style.display = 'block';
+
+    if (succeeded.length > 0) document.getElementById('del-bulk-input').value = '';
+  } catch(err) {
+    resEl.style.background = 'rgba(255,45,85,0.1)';
+    resEl.style.color = 'var(--red)';
+    resEl.style.border = '1px solid rgba(255,45,85,0.3)';
+    resEl.textContent = '✗ 操作失败：' + err.message;
+    resEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑️ 批量删除';
   }
 }
 
