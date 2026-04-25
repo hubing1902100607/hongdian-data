@@ -1710,17 +1710,7 @@ function enterApp(role) {
     supplyBtn.onmouseout = null;
     supplyBtn.onclick = () => alert('此功能仅限年度会员使用，请升级套餐后体验。');
   }
-  // AI助手仅季度及以上会员可用
-  const aiBtn = document.getElementById('ai-btn');
-  if (!isQOrAbove) {
-    aiBtn.style.background = 'var(--bg3)';
-    aiBtn.style.border = '1px solid var(--border)';
-    aiBtn.style.color = 'var(--text3)';
-    aiBtn.style.cursor = 'not-allowed';
-    aiBtn.onmouseover = null;
-    aiBtn.onmouseout = null;
-    aiBtn.onclick = () => alert('AI选品助手仅限季度及以上会员使用，请升级套餐后体验。');
-  }
+  // AI助手对所有用户开放
   document.getElementById('trial-badge').style.display = 'none';
 
   // Show expiry badge for regular users
@@ -2193,12 +2183,12 @@ function getFiltered() {
   let data = [...RAW_DATA];
   // 过滤私有商品：有submittedBy的只显示给对应用户，管理员可看全部
   if (currentRole !== 'admin') {
-    data = data.filter(d => !d.submittedBy || d.submittedBy === DEVICE_FP);
+    // 监控商品所有用户均可见，不再过滤
   }
   if (currentCat !== 'all') data = data.filter(d => d.category === currentCat);
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
-  if (showMonitorOnly) { data = data.filter(d => d.submittedBy === DEVICE_FP); }
+  if (showMonitorOnly) { data = data.filter(d => !!d.submittedBy); }
   if (currentSignal) {
     data = data.filter(d => {
       const f = Number(d.fans) || 0;
@@ -2437,15 +2427,7 @@ function openModal(id) {
       </a>
     </div>
     ${(function(){
-      const _sess = loadSession();
-      const _code = (_sess && _sess.code) || '';
-      const _parts = _code.toUpperCase().split('-');
-      const _ok = currentRole === 'admin' || (_parts.length === 4 && (_parts[1] === 'Q' || _parts[1] === 'Y'));
-      if (_ok) {
-        return '<button onclick="openAiWithProduct(' + item.id + ')" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:10px;color:var(--teal);font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;" onmouseover="this.style.background=\'rgba(0,201,167,0.2)\'" onmouseout="this.style.background=\'rgba(0,201,167,0.1)\'">🤖 用 AI 分析这个商品</button>';
-      } else {
-        return '<button onclick="alert(\'AI选品助手仅限季度及以上会员使用，请升级套餐后体验。\')" style="width:100%;margin-top:10px;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text3);font-size:13px;font-family:var(--font);cursor:not-allowed;">🤖 AI 分析（季度及以上会员专属）</button>';
-      }
+      return '<button onclick="openAiWithProduct(' + item.id + ')" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:10px;color:var(--teal);font-size:13px;font-family:var(--font);cursor:pointer;transition:all .15s;" onmouseover="this.style.background=\'rgba(0,201,167,0.2)\'" onmouseout="this.style.background=\'rgba(0,201,167,0.1)\'">🤖 用 AI 分析这个商品</button>';
     })()}
   `;
 
@@ -3938,7 +3920,7 @@ function initBottomScrollbar() {
     <button onclick="closeAiModal()" style="position:absolute;top:16px;right:16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
 
     <div style="font-size:15px;font-weight:500;margin-bottom:4px;">🤖 AI 选品助手</div>
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:16px;">基于北苑单品3万单实操经验手册 · 季度及以上会员专属</div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:16px;">基于北苑单品3万单实操经验手册</div>
 
     <!-- API Key 设置 -->
     <div id="ai-key-section" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">

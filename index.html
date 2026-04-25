@@ -393,22 +393,28 @@ footer a { color: var(--text3); text-decoration: none; }
 .plan:nth-child(2) { animation-delay: .12s; }
 .plan:nth-child(3) { animation-delay: .19s; }
 
-@media (max-width: 7px) {
+@media (max-width: 768px) {
   header { padding: 16px 20px; }
   .hero { padding: 36px 20px 28px; }
   .hero-titles { min-height: 80px; }
-  .hero-title-item { font-size: 26px; }
+  .hero-title-item { font-size: 24px; }
   .hero-sub { font-size: 13px; }
   .plans-wrap { padding: 0 16px 48px; }
-  .plans-grid { grid-template-columns: 1fr; }
-  .pay-steps { grid-template-columns: 1fr; }
-  .qr-row { flex-direction: column; align-items: center; }
 
-  /* 价值卡片区改为2列 */
-  .plans-wrap > div:first-child {
+  /* 套餐卡片单列 */
+  .plans-grid { grid-template-columns: 1fr; }
+
+  /* 价值卡片改为2列 */
+  .value-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
   }
+
+  /* 购买步骤单列 */
+  .pay-steps { grid-template-columns: 1fr; }
+
+  /* 二维码竖排 */
+  .qr-row { flex-direction: column; align-items: center; }
 
   /* 底部信息条竖排 */
   .plans-wrap > div:nth-child(2) {
@@ -420,12 +426,31 @@ footer a { color: var(--text3); text-decoration: none; }
     display: none !important;
   }
 
+  /* 套餐卡片内字体 */
+  .plan { padding: 20px 18px; }
+  .plan-price { font-size: 32px; }
+  .plan-name { font-size: 15px; }
+
+  /* pay区域 */
+  .pay-title { font-size: 20px; }
+  .pay-sub { font-size: 13px; }
+
   /* FAQ字体 */
   .faq-q { font-size: 13px; }
   .faq-a { font-size: 12px; }
 
   /* footer */
   footer { font-size: 11px; padding: 16px; }
+
+  /* header logo文字隐藏在极窄屏 */
+  .logo span { font-size: 14px; }
+}
+
+@media (max-width: 400px) {
+  .value-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-title-item { font-size: 22px; }
 }
 </style>
 </head>
@@ -451,7 +476,7 @@ footer a { color: var(--text3); text-decoration: none; }
 <div class="plans-wrap">
 
   <!-- 价值说明区 -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;">
+  <div class="value-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;">
       <div style="font-size:22px;margin-bottom:10px;">💥</div>
       <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:7px;">识别低粉高销爆款</div>
@@ -516,6 +541,7 @@ footer a { color: var(--text3); text-decoration: none; }
         <div class="plan-name">月度版</div>
         <div class="plan-price"><sup>¥</sup>599</div>
         <div class="plan-period">有效期 30 天</div>
+        <div class="plan-save">适合短期体验</div>
       </div>
       <div class="plan-divider"></div>
       <ul class="plan-features">
@@ -559,7 +585,7 @@ footer a { color: var(--text3); text-decoration: none; }
         <li><div class="feat-check">✓</div>低粉爆品 / 隐藏潜力品标签</li>
         <li><div class="feat-check">✓</div>商品销量趋势图</li>
         <li><div class="feat-check">✓</div>多维度筛选排序</li>
-        <li><div class="feat-check">✓</div>自定义监控（50个）</li>
+        <li><div class="feat-check">✓</div>自定义监控（不限数量）</li>
         <li><div class="feat-check">✓</div>AI 选品助手</li>
         <li><div class="feat-check">✓</div>货源对接服务</li>
         <li><div class="feat-check">✓</div>优先体验新功能</li>
@@ -571,24 +597,24 @@ footer a { color: var(--text3); text-decoration: none; }
   <!-- How to pay -->
   <div class="pay-section">
     <div class="pay-title">如何激活会员</div>
-    <div class="pay-sub">联系微信 <b style="color:var(--red)">beiyuanbitan01</b> 完成支付，我会将专属激活码发送给你，输入激活码和初始密码即可登录。后续如有定制化需求也欢迎联系。</div>
+    <div class="pay-sub">复制你在登录页看到的<b style="color:var(--text)">产品信息码</b>，联系微信 <b style="color:var(--red)">beiyuanbitan01</b> 完成支付，我会将专属激活码发送给你，填入即可完成激活。后续如有定制化需求也欢迎联系。</div>
 
     <div class="pay-steps">
       <div class="step">
         <div class="step-num">1</div>
-        <div class="step-text"><b>联系微信</b>添加微信 beiyuanbitan01，告知所选套餐</div>
+        <div class="step-text"><b>复制产品信息码</b>在登录页找到你的专属产品信息码并复制</div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <div class="step-text"><b>完成支付</b>按套餐价格完成支付</div>
+        <div class="step-text"><b>联系微信支付</b>添加微信 beiyuanbitan01，支付并发送产品信息码</div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <div class="step-text"><b>收到激活码</b>10分钟内收到专属激活码</div>
+        <div class="step-text"><b>收到激活码</b>10分钟内收到专属激活码，与你的设备绑定</div>
       </div>
       <div class="step">
         <div class="step-num">4</div>
-        <div class="step-text"><b>登录使用</b>打开 hongdiandata.com，输入激活码和密码即可解锁全部数据</div>
+        <div class="step-text"><b>填入激活</b>在登录页输入激活码，即可解锁全部数据</div>
       </div>
     </div>
 
@@ -596,7 +622,7 @@ footer a { color: var(--text3); text-decoration: none; }
       <div class="qr-card">
         <img class="qr-img" src="wechat_personal_qr.png" alt="个人微信二维码">
         <div class="qr-label">微信联系</div>
-        <div class="qr-hint">扫码添加 · 咨询购买</div>
+        <div class="qr-hint">扫码添加 · 发送信息码</div>
       </div>
       <div class="qr-card">
         <img class="qr-img" src="wechat_qr.png" alt="公众号二维码">
