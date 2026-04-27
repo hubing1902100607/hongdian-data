@@ -1011,15 +1011,19 @@
     <div class="update-time" id="update-time-badge">UPDATED 3.15</div>
     <button onclick="openChangePwdModal()" id="change-pwd-btn" style="display:none;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">🔑 改密码</button>
     <button onclick="handleLogout()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;">退出</button>
+    <span id="cat-type-btn-wrap" style="display:inline-flex;gap:4px;">
+      <button id="btn-physical" onclick="toggleCatTypeFilter('physical')"
+        style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;">📦 实体</button>
+      <button id="btn-virtual" onclick="toggleCatTypeFilter('virtual')"
+        style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;">💻 虚拟</button>
+    </span>
     <span id="monitor-btn-wrap" style="display:none;">
       <button onclick="openMonitorModal()" style="padding:6px 12px;background:var(--teal-dim);border:1px solid rgba(0,201,167,0.3);border-radius:6px;color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='var(--teal-dim)'">📡 我的监控</button>
     </span>
     <span id="score-btn-wrap" style="display:none;">
       <button onclick="openScoreModal()" style="padding:6px 12px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);border-radius:6px;color:var(--gold);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(255,214,10,0.22)'" onmouseout="this.style.background='rgba(255,214,10,0.12)'">⭐ 选品评分</button>
     </span>
-    <span id="supply-btn-wrap" style="display:none;">
-      <button onclick="openSupplyModal()" id="supply-btn" style="padding:6px 12px;background:rgba(138,43,226,0.12);border:1px solid rgba(138,43,226,0.3);border-radius:6px;color:#a855f7;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(138,43,226,0.22)'" onmouseout="this.style.background='rgba(138,43,226,0.12)'">🔗 货源对接</button>
-    </span>
+
     <span id="ai-btn-wrap" style="display:none;">
       <button onclick="openAiModal()" id="ai-btn" style="padding:6px 12px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3);border-radius:6px;color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,201,167,0.22)'" onmouseout="this.style.background='rgba(0,201,167,0.12)'">🤖 AI 选品助手</button>
     </span>
@@ -1031,7 +1035,8 @@
 <main>
 
   <!-- KPI Cards -->
-  <div class="kpi-row">
+  <!-- KPI 卡片 -->
+  <div class="kpi-row" style="margin-bottom:32px;">
     <div class="kpi-card">
       <div class="kpi-label">收录爆款数</div>
       <div class="kpi-value" id="kpi-total">—</div>
@@ -1056,26 +1061,40 @@
 
   <!-- Charts -->
   <div class="charts-row">
+    <!-- 加购销量比 Top20 -->
     <div class="chart-card">
       <div class="chart-title">
         <span class="chart-title-dot" style="background:var(--red)"></span>
-        销量 TOP 8 排行
+        加购销量比 Top20
       </div>
-      <div class="chart-wrap"><canvas id="chart-sales"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-cart-ratio"></canvas></div>
     </div>
+    <!-- 销量增长趋势 Top20 -->
     <div class="chart-card">
-      <div class="chart-title">
-        <span class="chart-title-dot" style="background:var(--gold)"></span>
-        类目销量占比
+      <div class="chart-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+        <span style="display:flex;align-items:center;gap:6px;">
+          <span class="chart-title-dot" style="background:var(--gold)"></span>
+          销量增长趋势 Top20
+        </span>
+        <div style="display:flex;gap:4px;margin-left:auto;">
+          <button id="growth-btn-abs" onclick="switchGrowthChart('abs')"
+            style="padding:2px 8px;font-size:10px;border-radius:4px;border:1px solid var(--red);background:var(--red);color:#fff;cursor:pointer;font-family:var(--font);">绝对增长</button>
+          <button id="growth-btn-rate" onclick="switchGrowthChart('rate')"
+            style="padding:2px 8px;font-size:10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:var(--font);">增长率</button>
+          <button id="growth-btn-avg" onclick="switchGrowthChart('avg')"
+            style="padding:2px 8px;font-size:10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:var(--font);">平均增量</button>
+        </div>
       </div>
-      <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
+      <div id="growth-desc" style="font-size:10px;color:var(--text3);margin-bottom:6px;padding-left:2px;">最新记录销量 - 较上次记录销量，反映实际增加单量</div>
+      <div class="chart-wrap"><canvas id="chart-growth"></canvas></div>
     </div>
+    <!-- 类目商品分布 -->
     <div class="chart-card">
       <div class="chart-title">
         <span class="chart-title-dot" style="background:var(--teal)"></span>
-        价格区间分布
+        类目商品分布
       </div>
-      <div class="chart-wrap"><canvas id="chart-price"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
     </div>
   </div>
 
@@ -1092,6 +1111,8 @@
     <select class="sort-select" id="sort-select" onchange="filterAndRender()">
       <option value="sales">按销量排序</option>
       <option value="addCart">按加购量排序</option>
+      <option value="cartRatio">按加购销量比排序</option>
+      <option value="firstDate">按录入时间排序</option>
       <option value="buy24h">按24h购买排序</option>
       <option value="price">按价格排序</option>
       <option value="revenue">按预估GMV排序</option>
@@ -1233,7 +1254,8 @@
             <th onclick="setSortAndFilter('fans')" id="th-fans">店铺粉丝 ↕</th>
             <th onclick="setSortAndFilter('revenue')" id="th-revenue">预估GMV ↕</th>
             <th>商品链接</th>
-            <th id="th-first-date" style="display:none;white-space:nowrap;color:var(--text3);cursor:pointer;user-select:none;" onclick="setSortAndFilter('firstDate')">录入时间 ↕</th>
+            <th onclick="setSortAndFilter('cartRatio')" id="th-cartRatio" style="white-space:nowrap;">加购销量比 ↕</th>
+            <th id="th-first-date" style="white-space:nowrap;color:var(--text3);cursor:pointer;user-select:none;" onclick="setSortAndFilter('firstDate')">录入时间 ↕</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -1384,6 +1406,7 @@ let currentRole         = null;    // 'admin' | 'user' | null
 let currentCat          = 'all';   // 当前筛选类目
 let currentPage         = 1;       // 当前页码
 let currentSort         = 'sales'; // 当前排序字段
+let currentCatType      = null;    // 'physical' | 'virtual' | null
 let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
 let showFavOnly         = false;   // 是否只显示收藏
@@ -1688,28 +1711,32 @@ function enterApp(role) {
   }
   document.getElementById('monitor-btn-wrap').style.display = role === 'user'  ? '' : 'none';
   document.getElementById('score-btn-wrap').style.display   = '';
-  document.getElementById('supply-btn-wrap').style.display  = '';
+
   document.getElementById('ai-btn-wrap').style.display      = '';
+  document.getElementById('cat-type-btn-wrap').style.display = role === 'user' || role === 'admin' ? 'inline-flex' : 'none';
   // 我的监控筛选按钮只对普通用户显示
   if (role === 'user') {
     document.getElementById('monitor-filter-btn').style.display = '';
     updateMonitorBtn();
   }
-  // 货源对接仅年度会员可用
-  const supplyBtn = document.getElementById('supply-btn');
   const code = loadSession()?.code || '';
   const parts = code.toUpperCase().split('-');
-  const isYearly = role === 'admin' || (parts.length === 4 && parts[1] === 'Y');
   const isQOrAbove = role === 'admin' || (parts.length === 4 && (parts[1] === 'Q' || parts[1] === 'Y'));
-  if (!isYearly) {
-    supplyBtn.style.background = 'var(--bg3)';
-    supplyBtn.style.border = '1px solid var(--border)';
-    supplyBtn.style.color = 'var(--text3)';
-    supplyBtn.style.cursor = 'not-allowed';
-    supplyBtn.onmouseover = null;
-    supplyBtn.onmouseout = null;
-    supplyBtn.onclick = () => alert('此功能仅限年度会员使用，请升级套餐后体验。');
+
+  // Excel导出：仅季度及以上会员可用
+  const exportBtns = document.querySelectorAll('[onclick="exportExcel()"]');
+  if (!isQOrAbove) {
+    exportBtns.forEach(btn => {
+      btn.style.background = 'var(--bg3)';
+      btn.style.border = '1px solid var(--border)';
+      btn.style.color = 'var(--text3)';
+      btn.style.cursor = 'not-allowed';
+      btn.onmouseover = null;
+      btn.onmouseout = null;
+      btn.onclick = () => alert('Excel导出仅限季度及以上会员使用。');
+    });
   }
+
   // AI助手对所有用户开放
   document.getElementById('trial-badge').style.display = 'none';
 
@@ -1958,7 +1985,6 @@ function fetchLatestProducts(session, retryCount) {
       renderKPIs();
       Chart.getChart('chart-sales')?.destroy();
       Chart.getChart('chart-category')?.destroy();
-      Chart.getChart('chart-price')?.destroy();
       renderCharts(); renderCatFilters(); renderTable();
       updateFavBtn();
     }
@@ -2033,58 +2059,157 @@ function renderKPIs() {
     return fansNum >= 5000 && d.addCart >= 500;
   }).length;
 
+  const isVirtual = d => d.category === '虚拟产品类' || (d.category && d.category.startsWith('虚拟-'));
+  const physical = RAW_DATA.filter(d => !isVirtual(d)).length;
+  const virtual  = RAW_DATA.filter(d => isVirtual(d)).length;
+
   document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-physical').textContent = physical;
+  document.getElementById('kpi-virtual').textContent = virtual;
   document.getElementById('kpi-low-fans').textContent = lowFansBoom;
   document.getElementById('kpi-high-fans').textContent = highFansBoom;
   document.getElementById('kpi-hidden').textContent = hidden;
 }
 
 // Charts
-function renderCharts() {
-  const sorted = [...RAW_DATA].sort((a,b) => b.sales - a.sales).slice(0, 8);
+// 图表实例缓存，用于切换增长趋势时销毁重建
+let _chartGrowthInst = null;
+let _chartCartRatioInst = null;
+let _chartCatInst = null;
+let _growthMode = 'abs'; // 当前增长趋势模式
 
-  // Sales bar
-  const salesCtx = document.getElementById('chart-sales').getContext('2d');
-  new Chart(salesCtx, {
+// 通用图表配置
+const _chartTooltip = {
+  backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+  titleColor: '#e8e8f0', bodyColor: '#9090a8'
+};
+const _chartScaleX = { ticks: { color: '#5a5a70', font: { size: 10 } }, grid: { display: false }, border: { display: false } };
+const _chartScaleY = { ticks: { color: '#5a5a70', font: { size: 10 }, callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } };
+
+function switchGrowthChart(mode) {
+  _growthMode = mode;
+  // 更新按钮样式
+  ['abs','rate','avg'].forEach(m => {
+    const btn = document.getElementById('growth-btn-' + m);
+    if (!btn) return;
+    if (m === mode) {
+      btn.style.background = 'var(--red)'; btn.style.borderColor = 'var(--red)'; btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent'; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text3)';
+    }
+  });
+  // 更新说明文字
+  const desc = document.getElementById('growth-desc');
+  if (desc) {
+    if (mode === 'abs') desc.textContent = '最新记录销量 - 较上次记录销量，反映实际增加单量（大销量商品容易靠前）';
+    else if (mode === 'rate') desc.textContent = '(最新 - 上次) ÷ 上次 × 100%，反映增长速度，小品也有机会冒头（注意基数极小的品增长率可能虚高）';
+    else desc.textContent = '取最近3次记录的平均单次增量，过滤偶发暴增，反映持续增长能力';
+  }
+  renderGrowthChart();
+}
+
+function getGrowthData(mode) {
+  return RAW_DATA
+    .map(d => {
+      const h = d.salesHistory;
+      if (!h || h.length < 2) return null;
+      const latest = h[h.length - 1].sales || 0;
+      const prev   = h[h.length - 2].sales || 0;
+      let value = 0;
+      if (mode === 'abs') {
+        value = latest - prev;
+      } else if (mode === 'rate') {
+        value = prev > 0 ? Math.round((latest - prev) / prev * 1000) / 10 : 0;
+      } else {
+        // 平均增量：取最近3段差值的平均
+        const diffs = [];
+        for (let i = Math.max(1, h.length - 3); i < h.length; i++) {
+          diffs.push((h[i].sales || 0) - (h[i-1].sales || 0));
+        }
+        value = diffs.length ? Math.round(diffs.reduce((a,b) => a+b, 0) / diffs.length) : 0;
+      }
+      return { name: d.name, value };
+    })
+    .filter(d => d && d.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 20);
+}
+
+function renderGrowthChart() {
+  if (_chartGrowthInst) { _chartGrowthInst.destroy(); _chartGrowthInst = null; }
+  const data = getGrowthData(_growthMode);
+  const ctx = document.getElementById('chart-growth').getContext('2d');
+  const isRate = _growthMode === 'rate';
+  _chartGrowthInst = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: sorted.map(d => d.name.slice(0, 8) + '…'),
+      labels: data.map(d => d.name.slice(0, 8) + '…'),
       datasets: [{
-        data: sorted.map(d => d.sales),
-        backgroundColor: sorted.map((_, i) => i < 3 ? 'rgba(255,45,85,0.7)' : 'rgba(255,45,85,0.3)'),
-        borderColor: sorted.map((_, i) => i < 3 ? '#ff2d55' : 'rgba(255,45,85,0.5)'),
-        borderWidth: 1,
-        borderRadius: 4,
+        data: data.map(d => d.value),
+        backgroundColor: data.map((_, i) => i < 3 ? 'rgba(255,214,10,0.7)' : 'rgba(255,214,10,0.3)'),
+        borderColor: data.map((_, i) => i < 3 ? '#ffd60a' : 'rgba(255,214,10,0.5)'),
+        borderWidth: 1, borderRadius: 4,
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#16161f',
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-        titleColor: '#e8e8f0',
-        bodyColor: '#9090a8',
-        callbacks: { label: ctx => '  销量: ' + ctx.raw.toLocaleString() }
+        ..._chartTooltip,
+        callbacks: { label: ctx => isRate ? ('  增长率: ' + ctx.raw + '%') : ('  ' + (_growthMode === 'avg' ? '平均增量' : '绝对增长') + ': ' + ctx.raw.toLocaleString() + ' 单') }
       }},
       scales: {
-        x: { ticks: { color: '#5a5a70', font: { size: 10 } }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: '#5a5a70', font: { size: 10 }, callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+        x: _chartScaleX,
+        y: { ticks: { color: '#5a5a70', font: { size: 10 }, callback: v => isRate ? v + '%' : fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
       }
     }
   });
+}
 
-  // Category pie
+function renderCharts() {
+  // ── 加购销量比 Top20 ──
+  if (_chartCartRatioInst) { _chartCartRatioInst.destroy(); _chartCartRatioInst = null; }
+  const ratioData = [...RAW_DATA]
+    .filter(d => d.sales > 0)
+    .map(d => ({ name: d.name, value: Math.round(d.addCart / d.sales * 1000) / 1000 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 20);
+  const ratioCtx = document.getElementById('chart-cart-ratio').getContext('2d');
+  _chartCartRatioInst = new Chart(ratioCtx, {
+    type: 'bar',
+    data: {
+      labels: ratioData.map(d => d.name.slice(0, 8) + '…'),
+      datasets: [{
+        data: ratioData.map(d => d.value),
+        backgroundColor: ratioData.map((_, i) => i < 3 ? 'rgba(255,45,85,0.7)' : 'rgba(255,45,85,0.3)'),
+        borderColor: ratioData.map((_, i) => i < 3 ? '#ff2d55' : 'rgba(255,45,85,0.5)'),
+        borderWidth: 1, borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        ..._chartTooltip,
+        callbacks: { label: ctx => '  加购销量比: ' + ctx.raw }
+      }},
+      scales: { x: _chartScaleX, y: { ticks: { color: '#5a5a70', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } } }
+    }
+  });
+
+  // ── 销量增长趋势 ──
+  renderGrowthChart();
+
+  // ── 类目商品分布 ──
+  if (_chartCatInst) { _chartCatInst.destroy(); _chartCatInst = null; }
   const cats = {};
-  RAW_DATA.forEach(d => { cats[d.category] = (cats[d.category] || 0) + d.sales; });
+  RAW_DATA.forEach(d => { cats[d.category || '未分类'] = (cats[d.category || '未分类'] || 0) + 1; });
+  const catSorted = Object.entries(cats).sort((a,b) => b[1] - a[1]);
   const catCtx = document.getElementById('chart-category').getContext('2d');
-  const catColors = ['#ff2d55','#ffd60a','#00c9a7','#bf5af2','#5ac8fa','#ff9500','#34c759'];
-  new Chart(catCtx, {
+  const catColors = ['#ff2d55','#ffd60a','#00c9a7','#bf5af2','#5ac8fa','#ff9500','#34c759','#ff6b6b','#4ecdc4','#45b7d1'];
+  _chartCatInst = new Chart(catCtx, {
     type: 'doughnut',
     data: {
-      labels: Object.keys(cats),
-      datasets: [{ data: Object.values(cats), backgroundColor: catColors, borderColor: '#16161f', borderWidth: 2 }]
+      labels: catSorted.map(([k]) => k),
+      datasets: [{ data: catSorted.map(([,v]) => v), backgroundColor: catColors, borderColor: '#16161f', borderWidth: 2 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -2092,49 +2217,13 @@ function renderCharts() {
       plugins: {
         legend: { position: 'bottom', labels: { color: '#9090a8', font: { size: 10 }, boxWidth: 10, padding: 8 } },
         tooltip: {
-          backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-          titleColor: '#e8e8f0', bodyColor: '#9090a8',
-          callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw) }
+          ..._chartTooltip,
+          callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.raw + ' 个商品' }
         }
       }
     }
   });
 
-  // Price distribution
-  const buckets = {'¥0-10': 0, '¥10-30': 0, '¥30-60': 0, '¥60-100': 0, '¥100+': 0};
-  RAW_DATA.forEach(d => {
-    if (d.price < 10) buckets['¥0-10']++;
-    else if (d.price < 30) buckets['¥10-30']++;
-    else if (d.price < 60) buckets['¥30-60']++;
-    else if (d.price < 100) buckets['¥60-100']++;
-    else buckets['¥100+']++;
-  });
-  const priceCtx = document.getElementById('chart-price').getContext('2d');
-  new Chart(priceCtx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(buckets),
-      datasets: [{
-        data: Object.values(buckets),
-        backgroundColor: 'rgba(0,201,167,0.4)',
-        borderColor: '#00c9a7',
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-        titleColor: '#e8e8f0', bodyColor: '#9090a8',
-        callbacks: { label: ctx => '  商品数: ' + ctx.raw }
-      }},
-      scales: {
-        x: { ticks: { color: '#5a5a70', font: { size: 11 } }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: '#5a5a70', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
-      }
-    }
-  });
 }
 
 // Category filters
@@ -2185,6 +2274,9 @@ function getFiltered() {
   if (currentRole !== 'admin') {
     // 监控商品所有用户均可见，不再过滤
   }
+  const _isVirtual = d => d.category === '虚拟产品类' || (d.category && d.category.startsWith('虚拟-'));
+  if (currentCatType === 'physical') data = data.filter(d => !_isVirtual(d));
+  else if (currentCatType === 'virtual') data = data.filter(d => _isVirtual(d));
   if (currentCat !== 'all') data = data.filter(d => d.category === currentCat);
   if (searchQuery) data = data.filter(d => d.name.includes(searchQuery) || d.store.includes(searchQuery));
   if (showFavOnly) { const favs = loadFavs(); data = data.filter(d => favs.includes(d.id)); }
@@ -2229,6 +2321,11 @@ function getFiltered() {
   else if (sort === 'price') data.sort((a,b) => d * (b.price - a.price));
   else if (sort === 'revenue') data.sort((a,b) => d * (estimateRevenue(b) - estimateRevenue(a)));
   else if (sort === 'fans') data.sort((a,b) => d * (normFans(b) - normFans(a)));
+  else if (sort === 'cartRatio') data.sort((a,b) => {
+    const ra = a.sales > 0 ? a.addCart / a.sales : 0;
+    const rb = b.sales > 0 ? b.addCart / b.sales : 0;
+    return d * (rb - ra);
+  });
   else if (sort === 'firstDate') data.sort((a,b) => {
     const da = a.salesHistory && a.salesHistory.length ? normalizeHistDate(a.salesHistory[0].date) : '0000-00-00';
     const db = b.salesHistory && b.salesHistory.length ? normalizeHistDate(b.salesHistory[0].date) : '0000-00-00';
@@ -2314,7 +2411,8 @@ function renderTable() {
           ${currentRole === 'admin' ? '<button class="link-btn" style="background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.3);color:#ffd60a;" onclick="event.stopPropagation();openEditModal(' + item.id + ')">✏️</button>' : ''}
           ${currentRole === 'admin' ? '<button class="link-btn del-btn" onclick="event.stopPropagation();deleteProduct(' + item.id + ')">🗑️</button>' : ''}
         </td>
-        ${currentRole === 'admin' ? '<td style="font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap;">' + (item.salesHistory && item.salesHistory.length ? item.salesHistory[0].date : '—') + '</td>' : ''}
+        <td style="font-family:var(--mono);font-size:12px;color:var(--text2);white-space:nowrap;">${item.sales > 0 ? (item.addCart / item.sales).toFixed(2) : '—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap;">${item.salesHistory && item.salesHistory.length ? item.salesHistory[0].date : '—'}</td>
       </tr>
     `;
   }).join('');
@@ -2415,7 +2513,7 @@ function openModal(id) {
     <div class="trend-section">
       <div class="trend-label">
         <span>销量增长趋势（近7周）</span>
-        <span class="trend-growth ${growthClass}">${growthText} 环比上周</span>
+        <span class="trend-growth ${growthClass}">${growthText} 较上次记录</span>
       </div>
       <div class="trend-chart-wrap"><canvas id="modal-trend-chart"></canvas></div>
     </div>
@@ -2507,7 +2605,7 @@ function openModal(id) {
                 ? gmvSign + '¥' + (wow.gmvDiff / 10000).toFixed(2) + 'W'
                 : gmvSign + '¥' + wow.gmvDiff.toFixed(0);
               return [
-                `${arrow} 环比上周 ${sign}${wow.diff.toLocaleString()} 件 (${sign}${wow.pct}%)`,
+                `${arrow} 较上次记录 ${sign}${wow.diff.toLocaleString()} 件 (${sign}${wow.pct}%)`,
                 `💰 GMV 增量 ${gmvStr}`
               ];
             }
@@ -2910,8 +3008,7 @@ function confirmImport() {
         renderKPIs();
         Chart.getChart('chart-sales')?.destroy();
         Chart.getChart('chart-category')?.destroy();
-        Chart.getChart('chart-price')?.destroy();
-        renderCharts();
+          renderCharts();
         renderCatFilters();
         renderTable();
 
@@ -3057,6 +3154,28 @@ function updateMonitorBtn() {
 // ── End Monitor Filter ────────────────────────────────────
 
 // ── Signal Filter ────────────────────────────────────────
+function toggleCatTypeFilter(type) {
+  currentCatType = (currentCatType === type) ? null : type;
+  // 更新顶部按钮高亮
+  ['physical','virtual'].forEach(t => {
+    const btn = document.getElementById('btn-' + t);
+    if (!btn) return;
+    if (currentCatType === t) {
+      btn.style.background = t === 'physical' ? 'rgba(255,149,0,0.15)' : 'rgba(191,90,242,0.15)';
+      btn.style.borderColor = t === 'physical' ? 'rgba(255,149,0,0.5)' : 'rgba(191,90,242,0.5)';
+      btn.style.color = t === 'physical' ? '#ff9500' : '#bf5af2';
+    } else {
+      btn.style.background = 'var(--bg3)';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color = 'var(--text2)';
+    }
+    // KPI卡片同步高亮
+    const card = document.getElementById('kpi-card-' + t);
+    if (card) card.style.borderColor = currentCatType === t ? 'var(--red)' : '';
+  });
+  filterAndRender();
+}
+
 function toggleSignalFilter(signal) {
   const cards = { low: 'kpi-card-low', high: 'kpi-card-high', hidden: 'kpi-card-hidden' };
   const colors = { low: '#00c9a7', high: '#ffd60a', hidden: '#bf5af2' };
@@ -3101,7 +3220,6 @@ function deleteProduct(id) {
     renderKPIs();
     Chart.getChart('chart-sales')?.destroy();
     Chart.getChart('chart-category')?.destroy();
-    Chart.getChart('chart-price')?.destroy();
     renderCharts();
     renderCatFilters();
     renderTable();
@@ -3234,114 +3352,6 @@ function exportExcel() {
 }
 // ── End Export ────────────────────────────────────────────
 
-// ── 货源对接 ──────────────────────────────────────────────
-const SUPPLY_BUY_KEY = 'hd_supply_buy';
-
-function loadSupplyBuy() {
-  try { return JSON.parse(localStorage.getItem(SUPPLY_BUY_KEY) || '[]'); } catch { return []; }
-}
-function saveSupplyBuy(arr) { localStorage.setItem(SUPPLY_BUY_KEY, JSON.stringify(arr)); }
-
-function openSupplyModal() {
-  const el = document.getElementById('supply-modal-overlay');
-  el.style.display = 'flex';
-  showSupplyEntry();
-}
-function closeSupplyModal() {
-  document.getElementById('supply-modal-overlay').style.display = 'none';
-}
-function showSupplyEntry() {
-  document.getElementById('supply-entry-wrap').style.display = 'block';
-  document.getElementById('supply-buy-wrap').style.display = 'none';
-  document.getElementById('supply-sell-wrap').style.display = 'none';
-}
-function showSupplyForm(type) {
-  document.getElementById('supply-entry-wrap').style.display = 'none';
-  if (type === 'buy') {
-    document.getElementById('supply-buy-wrap').style.display = 'block';
-    document.getElementById('supply-sell-wrap').style.display = 'none';
-    const list = loadSupplyBuy();
-    const thisYear = new Date().getFullYear();
-    const yearList = list.filter(r => r.submittedAt && r.submittedAt.startsWith(thisYear));
-    const pending = yearList.filter(r => r.status === 'pending');
-    document.getElementById('supply-buy-quota').textContent =
-      `本年度已申请 ${yearList.length}/10 次 · 进行中 ${pending.length}/3 个`;
-  } else {
-    document.getElementById('supply-sell-wrap').style.display = 'block';
-    document.getElementById('supply-buy-wrap').style.display = 'none';
-  }
-}
-
-async function submitBuySupply() {
-  const name   = document.getElementById('sb-name').value.trim();
-  const link   = document.getElementById('sb-link').value.trim();
-  const wechat = document.getElementById('sb-wechat').value.trim();
-  if (!name)   { alert('请填写商品名称'); return; }
-  if (!link)   { alert('请填写对标商品链接'); return; }
-  if (!wechat) { alert('请填写微信号'); return; }
-
-  const list = loadSupplyBuy();
-  const thisYear = new Date().getFullYear();
-  const yearList = list.filter(r => r.submittedAt && r.submittedAt.startsWith(thisYear));
-  const pending  = yearList.filter(r => r.status === 'pending');
-  if (yearList.length >= 10) { alert('本年度申请次数已用完（10次）'); return; }
-  if (pending.length >= 3)   { alert('当前进行中的申请已达上限（3个），请等待处理后再提交'); return; }
-
-  const record = {
-    name, link,
-    price:  document.getElementById('sb-price').value.trim(),
-    qty:    document.getElementById('sb-qty').value.trim(),
-    note:   document.getElementById('sb-note').value.trim(),
-    wechat,
-    status: 'pending',
-    submittedAt: new Date().toISOString().slice(0,10),
-  };
-
-  try {
-    const session = loadSession();
-    await fetch(WORKER_URL + '/api/submit-supply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'buy', record, code: session?.code || '', fp: DEVICE_FP }),
-    });
-  } catch(e) {}
-
-  list.unshift(record);
-  saveSupplyBuy(list);
-  alert('已收到您的货源申请，我们将在7个工作日内为您匹配资源或提供采购建议。受限于供应链资源，我们无法保证100%找到对应货源，但会尽力为您提供最优解决方案。团队仅提供货源联系方式，后续洽谈需您自行与供货商沟通。有结果后我们将通过微信主动联系您。');
-  closeSupplyModal();
-}
-
-async function submitSellSupply() {
-  const type      = document.getElementById('ss-type').value;
-  const desc      = document.getElementById('ss-desc').value.trim();
-  const advantage = document.getElementById('ss-advantage').value.trim();
-  const wechat    = document.getElementById('ss-wechat').value.trim();
-  if (!type)      { alert('请选择货源类目'); return; }
-  if (!desc)      { alert('请填写可供货品类描述'); return; }
-  if (!advantage) { alert('请填写供货优势'); return; }
-  if (!wechat)    { alert('请填写微信号'); return; }
-
-  const record = {
-    type, desc, advantage,
-    note:   document.getElementById('ss-note').value.trim(),
-    wechat,
-    submittedAt: new Date().toISOString().slice(0,10),
-  };
-
-  try {
-    const session = loadSession();
-    await fetch(WORKER_URL + '/api/submit-supply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'sell', record, code: session?.code || '', fp: DEVICE_FP }),
-    });
-  } catch(e) {}
-
-  alert('已收到您的货源登记，我们会进行审核。审核通过后您的资源将进入货源库，当有匹配需求时我们会向买家推荐您的联系方式。登记不代表一定会有买家匹配，具体合作需双方自行协商。');
-  closeSupplyModal();
-}
-// ── End 货源对接 ──────────────────────────────────────────
 
 // ── AI 选品助手 ───────────────────────────────────────────
 const AI_KEY_STORAGE = 'hd_deepseek_key';
@@ -3983,105 +3993,6 @@ function initBottomScrollbar() {
   </div>
 </div>
 
-<!-- 货源对接弹窗 -->
-<div id="supply-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:640px;padding:28px;position:relative;">
-    <button onclick="closeSupplyModal()" style="position:absolute;top:16px;right:16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
-
-    <!-- 入口选择 -->
-    <div id="supply-entry-wrap">
-      <div style="font-size:15px;font-weight:500;margin-bottom:8px;">🔗 货源对接</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:20px;line-height:1.7;">
-        本服务为人工撮合，团队仅提供货源联系方式，不对货源质量作担保，不承诺100%找到货源，具体合作需双方自行协商。
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div onclick="showSupplyForm('buy')" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size:28px;margin-bottom:10px;">🛒</div>
-          <div style="font-size:14px;font-weight:500;margin-bottom:6px;">我要对接货源</div>
-          <div style="font-size:12px;color:var(--text3);line-height:1.6;">提交需求，我们为您匹配恰当的供货资源</div>
-        </div>
-        <div onclick="showSupplyForm('sell')" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size:28px;margin-bottom:10px;">📦</div>
-          <div style="font-size:14px;font-weight:500;margin-bottom:6px;">我要提供货源</div>
-          <div style="font-size:12px;color:var(--text3);line-height:1.6;">登记您的货源，有匹配的需求时我们会推荐您</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 对接货源表单 -->
-    <div id="supply-buy-wrap" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showSupplyEntry()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;">← 返回</button>
-        <div style="font-size:15px;font-weight:500;">🛒 我要对接货源</div>
-      </div>
-      <div id="supply-buy-quota" style="background:rgba(138,43,226,0.08);border:1px solid rgba(138,43,226,0.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#a855f7;"></div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">商品名称 *</div>
-        <input id="sb-name" type="text" placeholder="输入您想对接货源的商品名称" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">对标商品链接 *</div>
-        <input id="sb-link" type="text" placeholder="粘贴小红书或其他平台的商品链接" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">期望拿货单价区间（选填）</div>
-          <input id="sb-price" type="text" placeholder="如：5-10元" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-        </div>
-        <div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">每月预计采购量（选填）</div>
-          <input id="sb-qty" type="text" placeholder="如：500件" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-        </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">备注说明（选填）</div>
-        <textarea id="sb-note" placeholder="规格、颜色、包装等特殊要求" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;resize:none;height:70px;"></textarea>
-      </div>
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">微信号 *（用于结果通知）</div>
-        <input id="sb-wechat" type="text" placeholder="请输入您的微信号" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-      </div>
-      <button onclick="submitBuySupply()" style="width:100%;padding:11px;background:rgba(138,43,226,0.15);border:1px solid rgba(138,43,226,0.4);border-radius:8px;color:#a855f7;font-size:13px;font-weight:500;cursor:pointer;">提交货源申请</button>
-    </div>
-
-    <!-- 提供货源表单 -->
-    <div id="supply-sell-wrap" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showSupplyEntry()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;">← 返回</button>
-        <div style="font-size:15px;font-weight:500;">📦 我要提供货源</div>
-      </div>
-      <div style="background:rgba(138,43,226,0.08);border:1px solid rgba(138,43,226,0.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.7;">
-        登记后我们会进行审核，审核通过后您的资源将进入货源库。当有匹配需求时，我们会向买家推荐您的联系方式。登记不代表一定会有买家匹配，具体合作需双方自行协商。
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">货源类目 *</div>
-        <select id="ss-type" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-          <option value="">请选择</option>
-          <option value="实体商品">实体商品</option>
-          <option value="虚拟产品">虚拟产品</option>
-        </select>
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">可供货品类描述 *</div>
-        <input id="ss-desc" type="text" placeholder="如：食品类/辣椒酱、美妆类/口红" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">供货优势 *</div>
-        <textarea id="ss-advantage" placeholder="如：产地直发、价格优势、可定制包装、支持小批量" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;resize:none;height:70px;"></textarea>
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">备注（选填）</div>
-        <textarea id="ss-note" placeholder="其他补充说明" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;resize:none;height:60px;"></textarea>
-      </div>
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">微信号 *</div>
-        <input id="ss-wechat" type="text" placeholder="请输入您的微信号" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;">
-      </div>
-      <button onclick="submitSellSupply()" style="width:100%;padding:11px;background:rgba(138,43,226,0.15);border:1px solid rgba(138,43,226,0.4);border-radius:8px;color:#a855f7;font-size:13px;font-weight:500;cursor:pointer;">提交货源登记</button>
-    </div>
-
-  </div>
-</div>
 
 
 </body>
