@@ -1411,6 +1411,9 @@ var _chartGrowthInst    = null;
 var _chartCartRatioInst = null;
 var _chartCatInst       = null;
 var _growthMode         = 'abs';
+var _chartTooltip       = { backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#e8e8f0', bodyColor: '#9090a8' };
+var _chartScaleX        = { ticks: { color: '#5a5a70', font: { size: 10 } }, grid: { display: false }, border: { display: false } };
+var _chartScaleY        = { ticks: { color: '#5a5a70', font: { size: 10 }, callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } };
 let currentCatType      = null;    // 'physical' | 'virtual' | null
 let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
@@ -2065,26 +2068,13 @@ function renderKPIs() {
     return fansNum >= 5000 && d.addCart >= 500;
   }).length;
 
-  const isVirtual = d => d.category === '虚拟产品类' || (d.category && d.category.startsWith('虚拟-'));
-  const physical = RAW_DATA.filter(d => !isVirtual(d)).length;
-  const virtual  = RAW_DATA.filter(d => isVirtual(d)).length;
-
   document.getElementById('kpi-total').textContent = total;
-  document.getElementById('kpi-physical').textContent = physical;
-  document.getElementById('kpi-virtual').textContent = virtual;
   document.getElementById('kpi-low-fans').textContent = lowFansBoom;
   document.getElementById('kpi-high-fans').textContent = highFansBoom;
   document.getElementById('kpi-hidden').textContent = hidden;
 }
 
 // Charts
-// 通用图表配置
-const _chartTooltip = {
-  backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-  titleColor: '#e8e8f0', bodyColor: '#9090a8'
-};
-const _chartScaleX = { ticks: { color: '#5a5a70', font: { size: 10 } }, grid: { display: false }, border: { display: false } };
-const _chartScaleY = { ticks: { color: '#5a5a70', font: { size: 10 }, callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } };
 
 function switchGrowthChart(mode) {
   _growthMode = mode;
@@ -3170,10 +3160,26 @@ function toggleCatTypeFilter(type) {
       btn.style.borderColor = 'var(--border)';
       btn.style.color = 'var(--text2)';
     }
-    // KPI卡片同步高亮
+      // KPI卡片同步高亮
     const card = document.getElementById('kpi-card-' + t);
     if (card) card.style.borderColor = currentCatType === t ? 'var(--red)' : '';
   });
+
+  // 总收录卡片显示对应数量
+  const _isVirtualFn = d => d.category === '虚拟产品类' || (d.category && d.category.startsWith('虚拟-'));
+  const _totalEl = document.getElementById('kpi-total');
+  const _descEl  = _totalEl ? _totalEl.nextElementSibling : null;
+  if (currentCatType === 'physical') {
+    _totalEl.textContent = RAW_DATA.filter(d => !_isVirtualFn(d)).length;
+    if (_descEl) _descEl.textContent = '实体商品数量';
+  } else if (currentCatType === 'virtual') {
+    _totalEl.textContent = RAW_DATA.filter(d => _isVirtualFn(d)).length;
+    if (_descEl) _descEl.textContent = '虚拟商品数量';
+  } else {
+    _totalEl.textContent = RAW_DATA.length;
+    if (_descEl) _descEl.textContent = '累计已追踪商品数';
+  }
+
   filterAndRender();
 }
 
