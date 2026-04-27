@@ -1406,6 +1406,11 @@ let currentRole         = null;    // 'admin' | 'user' | null
 let currentCat          = 'all';   // 当前筛选类目
 let currentPage         = 1;       // 当前页码
 let currentSort         = 'sales'; // 当前排序字段
+// 图表实例（全局，避免重复初始化报错）
+var _chartGrowthInst    = null;
+var _chartCartRatioInst = null;
+var _chartCatInst       = null;
+var _growthMode         = 'abs';
 let currentCatType      = null;    // 'physical' | 'virtual' | null
 let sortDir             = 'desc';   // 当前排序方向
 let searchQuery         = '';      // 当前搜索关键词
@@ -1983,8 +1988,9 @@ function fetchLatestProducts(session, retryCount) {
       data.products.forEach(p => RAW_DATA.push(p));
       persistData();
       renderKPIs();
-      Chart.getChart('chart-sales')?.destroy();
-      Chart.getChart('chart-category')?.destroy();
+      if (_chartCartRatioInst) { _chartCartRatioInst.destroy(); _chartCartRatioInst = null; }
+      if (_chartGrowthInst) { _chartGrowthInst.destroy(); _chartGrowthInst = null; }
+      if (_chartCatInst) { _chartCatInst.destroy(); _chartCatInst = null; }
       renderCharts(); renderCatFilters(); renderTable();
       updateFavBtn();
     }
@@ -2072,12 +2078,6 @@ function renderKPIs() {
 }
 
 // Charts
-// 图表实例缓存，用于切换增长趋势时销毁重建
-let _chartGrowthInst = null;
-let _chartCartRatioInst = null;
-let _chartCatInst = null;
-let _growthMode = 'abs'; // 当前增长趋势模式
-
 // 通用图表配置
 const _chartTooltip = {
   backgroundColor: '#16161f', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
@@ -3006,9 +3006,10 @@ function confirmImport() {
           persistData();
         }
         renderKPIs();
-        Chart.getChart('chart-sales')?.destroy();
-        Chart.getChart('chart-category')?.destroy();
-          renderCharts();
+        if (_chartCartRatioInst) { _chartCartRatioInst.destroy(); _chartCartRatioInst = null; }
+        if (_chartGrowthInst) { _chartGrowthInst.destroy(); _chartGrowthInst = null; }
+        if (_chartCatInst) { _chartCatInst.destroy(); _chartCatInst = null; }
+        renderCharts();
         renderCatFilters();
         renderTable();
 
@@ -3218,7 +3219,9 @@ function deleteProduct(id) {
     const idx = RAW_DATA.findIndex(d => d.id === id);
     if (idx !== -1) RAW_DATA.splice(idx, 1);
     renderKPIs();
-    Chart.getChart('chart-sales')?.destroy();
+    if (_chartCartRatioInst) { _chartCartRatioInst.destroy(); _chartCartRatioInst = null; }
+    if (_chartGrowthInst) { _chartGrowthInst.destroy(); _chartGrowthInst = null; }
+    if (_chartCatInst) { _chartCatInst.destroy(); _chartCatInst = null; }
     Chart.getChart('chart-category')?.destroy();
     renderCharts();
     renderCatFilters();
